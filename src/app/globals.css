@@ -277,7 +277,38 @@ html[data-theme="light"] .spot::after {
   to { stroke-dashoffset: -24; }
 }
 
+/* ---------- performance & compositor optimizations ---------- */
+.content-visibility-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 600px;
+}
+
+@keyframes float-pill {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.float-pill {
+  animation: float-pill 5.5s ease-in-out infinite;
+  will-change: transform;
+}
+
+[data-scrolling="true"] .float-pill {
+  animation-play-state: paused !important;
+}
+
+@media (hover: none) {
+  .spot::before,
+  .spot::after {
+    display: none !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .flash, .marquee-track, .caret { animation: none; }
+  .flash, .marquee-track, .caret, .float-pill { animation: none !important; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

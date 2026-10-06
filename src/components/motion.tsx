@@ -6,7 +6,6 @@ import {
   useInView,
   useMotionValue,
   useReducedMotion,
-  useScroll,
   useSpring,
 } from "framer-motion";
 import React, { useEffect, useRef, useState } from "react";
@@ -17,7 +16,7 @@ export const EASE = [0.22, 1, 0.36, 1] as const;
 export function Reveal({
   children,
   delay = 0,
-  y = 28,
+  y = 16,
   className,
 }: {
   children: React.ReactNode;
@@ -25,13 +24,17 @@ export function Reveal({
   y?: number;
   className?: string;
 }) {
+  const reduce = useReducedMotion();
+  if (reduce) {
+    return <div className={className}>{children}</div>;
+  }
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 0, y, filter: "blur(8px)" }}
-      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      viewport={{ once: true, margin: "-70px" }}
-      transition={{ duration: 0.8, delay, ease: EASE }}
+      initial={{ opacity: 0, y: Math.min(y, 16) }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "0px 0px -40px 0px" }}
+      transition={{ duration: 0.45, delay: Math.min(delay, 0.2), ease: EASE }}
     >
       {children}
     </motion.div>
@@ -57,6 +60,10 @@ export function SplitText({
   highlight?: string[];
   highlightClass?: string;
 }) {
+  const reduce = useReducedMotion();
+  if (reduce) {
+    return <span className={className}>{text}</span>;
+  }
   const words = text.split(" ");
   return (
     <span className={className}>
@@ -66,11 +73,11 @@ export function SplitText({
           <span className="inline-block overflow-hidden pb-[0.14em] align-bottom [margin-bottom:-0.14em]">
             <motion.span
               className={`inline-block will-change-transform ${highlight.includes(w) ? highlightClass : ""}`}
-              initial={{ y: "115%", rotate: 5, opacity: 0 }}
+              initial={{ y: "115%", rotate: 2, opacity: 0 }}
               {...(onView
-                ? { whileInView: { y: 0, rotate: 0, opacity: 1 }, viewport: { once: true, margin: "-60px" } }
+                ? { whileInView: { y: 0, rotate: 0, opacity: 1 }, viewport: { once: true, margin: "-40px" } }
                 : { animate: { y: 0, rotate: 0, opacity: 1 } })}
-              transition={{ duration: 0.9, delay: delay + i * stagger, ease: EASE }}
+              transition={{ duration: 0.7, delay: delay + i * stagger, ease: EASE }}
             >
               {w}
             </motion.span>
@@ -225,13 +232,31 @@ export function Marquee({
 
 /* ----------------------------------------------------------- ScrollProgress */
 export function ScrollProgress() {
-  const { scrollYProgress } = useScroll();
-  const scaleX = useSpring(scrollYProgress, { stiffness: 140, damping: 24, mass: 0.2 });
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    let ticking = false;
+    const update = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          if (ref.current) {
+            const h = document.documentElement.scrollHeight - window.innerHeight;
+            const p = h > 0 ? Math.min(window.scrollY / h, 1) : 0;
+            ref.current.style.transform = `scaleX(${p})`;
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
+  }, []);
   return (
-    <motion.div
+    <div
+      ref={ref}
       aria-hidden
-      className="fixed top-0 right-0 left-0 z-[80] h-[2px] origin-left bg-accent shadow-[0_0_12px_rgba(61,220,132,0.8)]"
-      style={{ scaleX }}
+      className="fixed top-0 right-0 left-0 z-[80] h-[2px] origin-left bg-accent shadow-[0_0_12px_rgba(61,220,132,0.8)] will-change-transform"
+      style={{ transform: "scaleX(0)" }}
     />
   );
 }
@@ -266,28 +291,40 @@ export function ParticleField({ className = "" }: { className?: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    // On screens under 768px or reduced motion, do not run the canvas at all.
+    if (typeof window === "undefined" || window.innerWidth < 768) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) return;
+
     const canvas = ref.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     let w = 0;
     let h = 0;
     let raf = 0;
     let visible = true;
+    let isScrolling = false;
+    let scrollTimer: ReturnType<typeof setTimeout> | null = null;
     const mouse = { x: -9999, y: -9999 };
     type P = { x: number; y: number; vx: number; vy: number; r: number };
     let pts: P[] = [];
 
     const resize = () => {
+      if (window.innerWidth < 768) {
+        cancelAnimationFrame(raf);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        return;
+      }
       const r = canvas.getBoundingClientRect();
       w = r.width;
       h = r.height;
       canvas.width = w * dpr;
       canvas.height = h * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const n = Math.round(Math.min(95, (w * h) / 13000));
+      const n = Math.round(Math.min(75, (w * h) / 16000));
       pts = Array.from({ length: n }, () => ({
         x: Math.random() * w,
         y: Math.random() * h,
@@ -300,19 +337,17 @@ export function ParticleField({ className = "" }: { className?: string }) {
     const draw = () => {
       ctx.clearRect(0, 0, w, h);
       for (const p of pts) {
-        if (!reduce) {
-          p.x += p.vx;
-          p.y += p.vy;
-          if (p.x < 0 || p.x > w) p.vx *= -1;
-          if (p.y < 0 || p.y > h) p.vy *= -1;
-          const dx = p.x - mouse.x;
-          const dy = p.y - mouse.y;
-          const d2 = dx * dx + dy * dy;
-          if (d2 < 150 * 150 && d2 > 1) {
-            const f = (1 - Math.sqrt(d2) / 150) * 0.6;
-            p.x += (dx / Math.sqrt(d2)) * f;
-            p.y += (dy / Math.sqrt(d2)) * f;
-          }
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0 || p.x > w) p.vx *= -1;
+        if (p.y < 0 || p.y > h) p.vy *= -1;
+        const dx = p.x - mouse.x;
+        const dy = p.y - mouse.y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < 150 * 150 && d2 > 1) {
+          const f = (1 - Math.sqrt(d2) / 150) * 0.6;
+          p.x += (dx / Math.sqrt(d2)) * f;
+          p.y += (dy / Math.sqrt(d2)) * f;
         }
       }
       const isLight =
@@ -361,8 +396,24 @@ export function ParticleField({ className = "" }: { className?: string }) {
     };
 
     const loop = () => {
-      if (visible) draw();
-      raf = requestAnimationFrame(loop);
+      if (visible && !isScrolling && window.innerWidth >= 768) {
+        draw();
+        raf = requestAnimationFrame(loop);
+      }
+    };
+
+    const onScroll = () => {
+      isScrolling = true;
+      document.documentElement.dataset.scrolling = "true";
+      if (scrollTimer) clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => {
+        isScrolling = false;
+        delete document.documentElement.dataset.scrolling;
+        if (visible && window.innerWidth >= 768) {
+          cancelAnimationFrame(raf);
+          raf = requestAnimationFrame(loop);
+        }
+      }, 150);
     };
 
     const onMove = (e: PointerEvent) => {
@@ -377,20 +428,31 @@ export function ParticleField({ className = "" }: { className?: string }) {
 
     resize();
     draw();
-    if (!reduce) raf = requestAnimationFrame(loop);
-    const io = new IntersectionObserver(([e]) => (visible = e.isIntersecting));
+    raf = requestAnimationFrame(loop);
+    const io = new IntersectionObserver(([e]) => {
+      visible = e.isIntersecting;
+      if (visible && !isScrolling && window.innerWidth >= 768) {
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(loop);
+      }
+    });
     io.observe(canvas);
-    window.addEventListener("resize", resize);
-    window.addEventListener("pointermove", onMove);
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", resize, { passive: true });
+    window.addEventListener("pointermove", onMove, { passive: true });
     document.addEventListener("pointerleave", onLeave);
     return () => {
       cancelAnimationFrame(raf);
+      if (scrollTimer) clearTimeout(scrollTimer);
+      delete document.documentElement.dataset.scrolling;
       io.disconnect();
+      window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", resize);
       window.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerleave", onLeave);
     };
   }, []);
 
-  return <canvas ref={ref} aria-hidden className={`h-full w-full ${className}`} />;
+  return <canvas ref={ref} aria-hidden className={`hidden md:block h-full w-full ${className}`} />;
 }

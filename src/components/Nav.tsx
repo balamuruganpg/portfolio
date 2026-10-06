@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useMotionValueEvent, useScroll } from "framer-motion";
+import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { profile } from "@/data/site";
 import ThemeToggle from "./ThemeToggle";
@@ -15,10 +15,7 @@ const LINKS = [
 ] as const;
 
 export default function Nav() {
-  const [scrolled, setScrolled] = useState(false);
   const [active, setActive] = useState<string>("");
-  const { scrollY } = useScroll();
-  useMotionValueEvent(scrollY, "change", (v) => setScrolled(v > 40));
 
   useEffect(() => {
     const ids = [...LINKS.map(([, id]) => id), "certs", "how"];
@@ -37,13 +34,11 @@ export default function Nav() {
     <motion.header
       initial={{ y: -80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.9, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed top-0 right-0 left-0 z-50 flex justify-center px-4 pt-4"
+      transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+      className="fixed top-0 right-0 left-0 z-50 flex justify-center px-4 pt-3.5"
     >
       <nav
-        className={`flex w-full items-center justify-between rounded-full border px-3 py-2 backdrop-blur-xl transition-all duration-500 ${
-          scrolled ? "max-w-3xl border-line bg-bg/75 shadow-2xl shadow-black/60" : "max-w-6xl border-transparent bg-transparent"
-        }`}
+        className="flex w-full max-w-5xl items-center justify-between rounded-full border border-line/80 bg-surface/85 px-3 py-2 backdrop-blur-md shadow-xl shadow-black/30"
       >
         <a href="#top" className="group flex items-center gap-2.5" aria-label="Back to top">
           <motion.span

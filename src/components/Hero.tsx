@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { profile, projects } from "@/data/site";
 import { AskButton, Ext } from "./ui";
@@ -113,18 +113,12 @@ function FloatChip({
   dur?: number;
 }) {
   return (
-    <motion.div
-      className={`absolute z-10 hidden rounded-xl border border-line bg-surface/90 px-3 py-2 font-mono text-[11px] shadow-xl shadow-black/60 backdrop-blur lg:block ${className}`}
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1, y: [0, -10, 0] }}
-      transition={{
-        opacity: { delay: 1.4 + delay, duration: 0.6 },
-        scale: { delay: 1.4 + delay, duration: 0.6, ease: EASE },
-        y: { delay: 2 + delay, duration: dur, repeat: Infinity, ease: "easeInOut" },
-      }}
+    <div
+      className={`float-pill absolute z-10 hidden rounded-xl border border-line bg-surface/90 px-3 py-2 font-mono text-[11px] shadow-lg shadow-black/40 lg:block ${className}`}
+      style={{ animationDelay: `${delay}s`, animationDuration: `${dur}s` }}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -132,10 +126,30 @@ const featuredNum = (slug: string) => parseInt(projects.find((p) => p.slug === s
 const liveCount = projects.filter((p) => p.live).length;
 
 export default function Hero() {
-  const ref = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-  const y = useTransform(scrollYProgress, [0, 1], [0, 100]);
-  const fade = useTransform(scrollYProgress, [0, 0.75], [1, 0]);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          if (contentRef.current) {
+            const sy = window.scrollY;
+            if (sy <= 700) {
+              const yVal = Math.min(sy * 0.16, 60);
+              const opacityVal = Math.max(1 - sy / 550, 0);
+              contentRef.current.style.transform = `translate3d(0, ${yVal}px, 0)`;
+              contentRef.current.style.opacity = `${opacityVal}`;
+            }
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const stats: { n: number; suffix?: string; label: string }[] = [
     { n: projects.length, label: "public repos" },
@@ -146,7 +160,7 @@ export default function Hero() {
 
   return (
     <>
-      <section ref={ref} id="top" className="relative flex min-h-[92svh] items-center overflow-hidden pt-24 pb-14">
+      <section id="top" className="relative flex min-h-[92svh] items-center overflow-hidden pt-24 pb-14">
         {/* background layers */}
         <div className="absolute inset-0 grid-bg" aria-hidden />
         <div
@@ -155,20 +169,16 @@ export default function Hero() {
         >
           <ParticleField />
         </div>
-        <motion.div
+        <div
           aria-hidden
-          className="absolute -top-40 -left-40 h-[560px] w-[560px] rounded-full bg-accent/[0.13] blur-[130px]"
-          animate={{ x: [0, 90, 0], y: [0, 60, 0] }}
-          transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
+          className="pointer-events-none absolute -top-40 -left-40 h-[560px] w-[560px] rounded-full [background:radial-gradient(circle,rgba(61,220,132,0.11)_0%,transparent_70%)]"
         />
-        <motion.div
+        <div
           aria-hidden
-          className="absolute right-[-12rem] bottom-[-8rem] h-[520px] w-[520px] rounded-full bg-accent/[0.08] blur-[140px]"
-          animate={{ x: [0, -80, 0], y: [0, -50, 0] }}
-          transition={{ duration: 19, repeat: Infinity, ease: "easeInOut" }}
+          className="pointer-events-none absolute right-[-12rem] bottom-[-8rem] h-[520px] w-[520px] rounded-full [background:radial-gradient(circle,rgba(61,220,132,0.07)_0%,transparent_70%)]"
         />
 
-        <motion.div style={{ y, opacity: fade }} className="relative mx-auto grid w-full max-w-6xl items-center gap-10 px-5 lg:grid-cols-12">
+        <div ref={contentRef} className="relative mx-auto grid w-full max-w-6xl items-center gap-10 px-5 lg:grid-cols-12 will-change-transform">
           <div className="lg:col-span-7">
             <motion.p
               initial={{ opacity: 0, y: 14 }}
@@ -255,7 +265,7 @@ export default function Hero() {
               <span className="text-accent">●</span> Bull/Bear · {featuredNum("bull-bear-autopilot")} tests
             </FloatChip>
           </motion.div>
-        </motion.div>
+        </div>
       </section>
 
       {/* STATS */}

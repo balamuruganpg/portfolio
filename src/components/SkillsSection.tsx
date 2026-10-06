@@ -315,7 +315,7 @@ export default function SkillsSection() {
             <div
               key={group.group}
               onMouseMove={onSpot}
-              className="spot group rounded-2xl border border-line bg-surface/85 p-6 backdrop-blur-sm transition-all hover:border-accent/30"
+              className="spot group rounded-2xl border border-line bg-surface p-6 transition-colors hover:border-accent/30"
             >
               <div className="mb-4 flex items-center justify-between border-b border-line/60 pb-3">
                 <div className="flex items-center gap-2.5">
@@ -373,7 +373,7 @@ export default function SkillsSection() {
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
                 onMouseMove={onSpot}
-                className="spot rounded-2xl border border-accent/40 bg-surface/95 p-6 shadow-[0_16px_40px_rgba(0,0,0,0.6),0_0_30px_rgba(61,220,132,0.15)] backdrop-blur-md"
+                className="spot rounded-2xl border border-accent/40 bg-surface p-6 shadow-xl shadow-black/40"
               >
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-line/70 pb-3">

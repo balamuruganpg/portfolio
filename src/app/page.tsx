@@ -94,7 +94,7 @@ export default function Home() {
 
         <div className="mx-auto max-w-6xl px-5">
           {/* SECTION 01: FEATURED WORK */}
-          <section className="pb-24">
+          <section className="pb-24 content-visibility-auto">
             <SectionHead
               id="featured"
               index="01"
@@ -104,11 +104,11 @@ export default function Home() {
 
             <div className="space-y-6">
               {caseRows.map((p, idx) => (
-                <Reveal key={p.slug} delay={idx * 0.1}>
+                <Reveal key={p.slug} delay={idx * 0.08} y={14}>
                   <article
                     id={`case-${p.slug}`}
                     onMouseMove={onSpot}
-                    className="spot group relative overflow-hidden rounded-2xl border border-line bg-surface/80 p-6 md:p-8 backdrop-blur-sm transition-all duration-300 hover:border-accent/40 hover:shadow-[0_12px_40px_rgba(0,0,0,0.6)]"
+                    className="spot group relative overflow-hidden rounded-2xl border border-line bg-surface p-6 md:p-8 transition-colors duration-200 hover:border-accent/40"
                   >
                     <div className="grid gap-8 lg:grid-cols-12 lg:items-center">
                       {/* Left: Project Identity & Links */}
@@ -235,7 +235,7 @@ export default function Home() {
           </section>
 
           {/* SECTION 02: ALL PROJECTS */}
-          <section className="pb-24">
+          <section className="pb-24 content-visibility-auto">
             <SectionHead
               id="projects"
               index="02"
@@ -246,7 +246,7 @@ export default function Home() {
           </section>
 
           {/* SECTION 03: EXPERIENCE & EDUCATION */}
-          <section className="pb-24">
+          <section className="pb-24 content-visibility-auto">
             <SectionHead
               id="experience"
               index="03"
@@ -256,10 +256,10 @@ export default function Home() {
 
             <div className="grid gap-8 md:grid-cols-2">
               {/* Internships */}
-              <Reveal>
+              <Reveal y={14}>
                 <div
                   onMouseMove={onSpot}
-                  className="spot h-full rounded-2xl border border-line bg-surface/80 p-7 backdrop-blur-sm"
+                  className="spot h-full rounded-2xl border border-line bg-surface p-7"
                 >
                   <div className="mb-6 flex items-center justify-between">
                     <p className="label flex items-center gap-2">
@@ -289,10 +289,10 @@ export default function Home() {
               </Reveal>
 
               {/* Education */}
-              <Reveal delay={0.15}>
+              <Reveal delay={0.08} y={14}>
                 <div
                   onMouseMove={onSpot}
-                  className="spot h-full rounded-2xl border border-line bg-surface/80 p-7 backdrop-blur-sm"
+                  className="spot h-full rounded-2xl border border-line bg-surface p-7"
                 >
                   <div className="mb-6 flex items-center justify-between">
                     <p className="label flex items-center gap-2">
@@ -325,7 +325,7 @@ export default function Home() {
           </section>
 
           {/* SECTION 04: SKILLS */}
-          <section className="pb-24">
+          <section className="pb-24 content-visibility-auto">
             <SectionHead
               id="skills"
               index="04"
@@ -337,7 +337,7 @@ export default function Home() {
           </section>
 
           {/* SECTION 05: CERTIFICATIONS */}
-          <section className="pb-24">
+          <section className="pb-24 content-visibility-auto">
             <SectionHead
               id="certs"
               index="05"
@@ -347,10 +347,10 @@ export default function Home() {
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {certifications.map((c, idx) => (
-                <Reveal key={c} delay={idx * 0.04}>
+                <Reveal key={c} delay={Math.min(idx * 0.02, 0.15)} y={12}>
                   <div
                     onMouseMove={onSpot}
-                    className="spot group flex items-center justify-between rounded-xl border border-line bg-surface/70 px-4 py-3.5 backdrop-blur-sm transition-all hover:border-accent/40 hover:bg-surface"
+                    className="spot group flex items-center justify-between rounded-xl border border-line bg-surface px-4 py-3.5 transition-colors hover:border-accent/40"
                   >
                     <span className="text-xs font-medium text-ink/90 group-hover:text-accent transition-colors">
                       {c}
@@ -365,7 +365,7 @@ export default function Home() {
           </section>
 
           {/* SECTION 06: HOW THE ASSISTANT WORKS */}
-          <section className="pb-24">
+          <section className="pb-24 content-visibility-auto">
             <SectionHead
               id="how"
               index="06"
@@ -397,10 +397,10 @@ export default function Home() {
                   tag: "Zero Hallucination",
                 },
               ].map((item, i) => (
-                <Reveal key={item.step} delay={i * 0.1}>
+                <Reveal key={item.step} delay={i * 0.08} y={14}>
                   <div
                     onMouseMove={onSpot}
-                    className="spot group relative h-full rounded-2xl border border-line bg-surface/80 p-6 backdrop-blur-sm transition hover:border-accent/40"
+                    className="spot group relative h-full rounded-2xl border border-line bg-surface p-6 transition-colors hover:border-accent/40"
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-mono text-2xl font-bold text-accent">
@@ -423,7 +423,7 @@ export default function Home() {
               ))}
             </div>
 
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-line/70 bg-surface/50 p-4 backdrop-blur-sm">
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-line/70 bg-surface/90 p-4">
               <span className="font-mono text-xs text-muted">
                 Test the grounded pipeline right now:
               </span>

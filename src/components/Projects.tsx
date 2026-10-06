@@ -90,7 +90,7 @@ export default function Projects() {
             id={`p-${p.slug}`}
             data-project={p.slug}
             onMouseMove={onSpot}
-            className="spot group flex flex-col justify-between rounded-xl border border-line bg-surface/90 p-5 backdrop-blur-sm transition-all duration-300 hover:border-accent/40 hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]"
+            className="spot group flex flex-col justify-between rounded-xl border border-line bg-surface p-5 transition-colors duration-200 hover:border-accent/40"
           >
             <div>
               <div className="mb-2.5 flex items-start justify-between gap-3">
