@@ -312,3 +312,45 @@ html[data-theme="light"] .spot::after {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* Shared finishing rules use the established palette and type scale. */
+.skip-link { position: fixed; top: -5rem; left: 1rem; z-index: 100; padding: .8rem 1rem; background: var(--color-accent); color: var(--color-bg); border-radius: .5rem; }
+.skip-link:focus { top: 1rem; }
+.section-heading { border-top: 1px solid var(--color-line); }
+section, article, aside, li { min-width: 0; }
+article p, [data-project] p { overflow-wrap: anywhere; }
+button, a { -webkit-tap-highlight-color: transparent; }
+button:disabled { cursor: wait; }
+footer a, [data-filter], button[aria-pressed] { min-height: 2.75rem; }
+footer a { display: inline-flex; align-items: center; }
+.text-faint { color: var(--color-muted); }
+@media (max-width: 767px) {
+  .section-heading { padding-top: 2rem; }
+  [data-project] { padding: 1.25rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; }
+}
+/* Keep small green labels and filled controls readable in the existing light palette. */
+html.light .text-accent,
+html.light .text-accent\/90 { color: var(--color-ink); }
+html.light .bg-accent.text-bg,
+html.light [aria-pressed="true"],
+html.light [aria-pressed="true"] span,
+html.light .skip-link { color: var(--color-ink); }
+
+/* Identity and navigation motion stays within the existing palette. */
+.hero-ambient { background: radial-gradient(circle, color-mix(in srgb, var(--color-accent) 9%, transparent), transparent 68%); animation: ambient-drift 18s ease-in-out infinite alternate; }
+.hero-highlight { background: linear-gradient(transparent 75%, color-mix(in srgb, var(--color-accent) 20%, transparent) 75%); }
+.hero-enter { animation: hero-enter .8s cubic-bezier(.22,1,.36,1) both; }
+.orbit-path { animation: orbit-path 28s linear infinite; }
+.avatar-orbit:hover .orbit-path { animation-duration: 10s; }
+.nav-shell { box-shadow: 0 12px 48px -24px color-mix(in srgb, var(--color-ink) 20%, transparent); }
+.assistant-launcher { box-shadow: 0 8px 28px -12px color-mix(in srgb, var(--color-accent) 35%, transparent); }
+@keyframes hero-enter { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes orbit-path { to { transform: rotate(360deg); } }
+@keyframes ambient-drift { to { transform: translate(-7%, 5%) scale(1.08); } }
+@media (prefers-reduced-motion: reduce) {
+  .hero-enter { animation: none !important; opacity: 1; transform: none; }
+  .orbit-path, .hero-ambient { animation: none !important; }
+}

@@ -41,17 +41,17 @@ export default function Projects() {
 
   return (
     <div>
-      <div role="tablist" aria-label="Filter projects" className="mb-6 flex flex-wrap gap-2">
+      <div role="group" aria-label="Filter projects" className="mb-6 flex flex-wrap gap-2">
         {FILTERS.map((f) => {
           const active = filter === f;
           return (
             <button
               key={f}
-              role="tab"
-              aria-selected={active}
+              type="button"
+              aria-pressed={active}
               data-filter={f}
               onClick={() => setFilter(f)}
-              className={`relative rounded-full px-3.5 py-1.5 font-mono text-xs transition duration-300 ${
+              className={`relative isolate rounded-full px-3.5 py-1.5 font-mono text-xs transition duration-300 ${
                 active ? "text-bg font-semibold" : "border border-line text-muted hover:border-faint hover:text-ink"
               }`}
             >
@@ -76,7 +76,7 @@ export default function Projects() {
           Showing {shown.length} of {projects.length} repositories
         </p>
         <span className="hidden font-mono text-xs text-faint sm:inline">
-          hover for spotlight · click ask to query
+          hover for spotlight Â· click ask to query
         </span>
       </div>
 
@@ -93,7 +93,7 @@ export default function Projects() {
             className="spot group flex flex-col justify-between rounded-xl border border-line bg-surface p-5 transition-colors duration-200 hover:border-accent/40"
           >
             <div>
-              <div className="mb-2.5 flex items-start justify-between gap-3">
+              <div className="mb-2.5 flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h3 className="font-semibold text-ink group-hover:text-accent transition-colors duration-200">
                     {p.name}
@@ -104,7 +104,7 @@ export default function Projects() {
                     </p>
                   )}
                 </div>
-                <div className="flex shrink-0 gap-1.5">
+                <div className="flex flex-wrap gap-1.5">
                   {p.status === "Ongoing" && (
                     <span className="flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 font-mono text-[10px] text-amber-400">
                       <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
@@ -136,7 +136,7 @@ export default function Projects() {
                 </div>
               </div>
 
-              <p className="mb-4 text-xs leading-relaxed text-muted line-clamp-3">
+              <p className="mb-4 text-sm leading-relaxed text-muted">
                 {p.summary}
               </p>
 
@@ -171,7 +171,7 @@ export default function Projects() {
                 onClick={() => emit(EV.ask, `What is ${p.name}?`)}
                 className="ml-auto rounded px-2 py-1 font-mono text-[11px] text-faint transition hover:bg-accent/10 hover:text-accent"
               >
-                ask ai →
+                ask ai â†’
               </button>
             </div>
           </motion.li>

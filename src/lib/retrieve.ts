@@ -57,6 +57,21 @@ export const MIN_SCORE = 4;
 export function retrieve(query: string, corpus: Doc[], k = 6): Retrieval {
   const q = query.toLowerCase();
   const qTokens = tokenize(query);
+  // Explicit names beat broad intent boosts. Never blend another project's
+  // numbers into a question about a named system.
+  const named = corpus.filter((d) => d.project && [d.project.name, d.project.slug, ...d.project.aliases.filter(a => a.length >= 6 && !/^(python|research|routing|fallback|playwright|reinforcement learning|portfolio allocation|contamination|benchmark|train\/eval|stock|finance|telegram)$/.test(a))]
+    .some(a => new RegExp(`(^|[^a-z0-9])${a.toLowerCase().replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}([^a-z0-9]|$)`).test(q)));
+  const personalDSA = (/\b(dsa|problems? (?:has |have )?(?:he |you )?solved|how many leetcode|personal leetcode|achievements?|achieved)\b/.test(q) || (/leetcode/.test(q) && /\b(problems?|solved|count)\b/.test(q))) && !/leetcode agent|coding agent/.test(q);
+  if (personalDSA) {
+    const docs = corpus.filter(d => d.section === "achievements");
+    if (docs.length) return { docs, scores: docs.map(() => 30), aliasHit: false, offTopic: false };
+  }
+  if (OFF_TOPIC.test(q)) return { docs: [], scores: [], aliasHit: named.length > 0, offTopic: true };
+  if (named.length) return { docs: named.slice(0, k), scores: named.map(() => 30).slice(0, k), aliasHit: true, offTopic: false };
+  if (/\b(live|deployed|demos?|online|try)\b/.test(q) && /\b(projects?|apps?|which|what)\b/.test(q) && !/\b(not|aren.t|no)\b/.test(q)) {
+    const docs = corpus.filter(d => d.project?.live).slice(0, k);
+    return { docs, scores: docs.map(() => 30), aliasHit: false, offTopic: false };
+  }
   let aliasHit = false;
 
   const scored = corpus.map((d) => {
@@ -122,7 +137,7 @@ export function unsupportedNumbers(answer: string, context: string): string[] {
     .replace(/(?:^|\n|\s)(?:\d{1,2}[.)]|\(\d{1,2}\))\s+/g, " ");
 
   const norm = (s: string) => {
-    const raw = (s.match(/\d+(?:[.,]\d+)*%?/g) ?? []).map((n) => n.replace(/,/g, ""));
+    const raw = (s.replace(/(\d)[\s\u00a0\u202f]+%/g, "$1%").match(/\d+(?:[.,]\d+)*%?/g) ?? []).map((n) => n.replace(/,/g, ""));
     const set = new Set<string>();
     for (const n of raw) {
       set.add(n);
@@ -134,7 +149,6 @@ export function unsupportedNumbers(answer: string, context: string): string[] {
   return [...new Set(norm(cleaned))].filter((n) => {
     if (ctx.has(n)) return false;
     if (n.endsWith("%") && ctx.has(n.slice(0, -1))) return false;
-    if (/^[1-5]$/.test(n)) return false;
     return true;
   });
 }

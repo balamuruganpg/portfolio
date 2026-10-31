@@ -1,4 +1,5 @@
 import {
+  achievements,
   certifications,
   education,
   experience,
@@ -16,7 +17,8 @@ export type Section =
   | "education"
   | "certs"
   | "skills"
-  | "resume";
+  | "resume"
+  | "achievements";
 
 export interface Doc {
   id: string;
@@ -93,6 +95,16 @@ export function buildSiteDocs(): Doc[] {
   });
 
   docs.push({
+    id: "achievements",
+    section: "achievements",
+    title: "Achievements",
+    text: achievements.map(a => `${a.title}: ${a.detail}.`).join(" ") + " The 330+ LeetCode DSA problems are Balamurugan's personal achievement, separate from the AI LeetCode Agent project's 230+ accepted submissions.",
+    summary: achievements.map(a => `${a.title}: ${a.detail}`).join("; "),
+    aliases: ["achievement", "achievements", "dsa", "personal leetcode", "problems solved", "330", "first rank"],
+    href: "#achievements",
+  });
+
+  docs.push({
     id: "contact",
     section: "contact",
     title: "Contact",
@@ -107,10 +119,10 @@ export function buildSiteDocs(): Doc[] {
     section: "experience",
     title: "Internships",
     text: experience
-      .map((e) => `${e.role} at ${e.org} (${e.mode}, ${e.period})${e.detail ? `: ${e.detail}` : ""}.`)
+      .map((e) => `${e.role} at ${e.org} (${e.mode}, ${e.period})${e.detail ? `: ${e.detail}` : ""}. ${e.outcomes.join(" ")}`)
       .join("\n"),
     summary: experience
-      .map((e) => `${e.org}: ${e.role}${e.detail ? `, ${e.detail.toLowerCase()}` : ""} (${e.mode}, ${e.period})`)
+      .map((e) => `${e.org}: ${e.role}${e.detail ? `, ${e.detail.toLowerCase()}` : ""} (${e.mode}, ${e.period}). ${e.outcomes.join(" ")}`)
       .join("; "),
     aliases: ["internship", "internships", "neo zeno", "yuva", "automotive", "experience", "work experience"],
     href: "#experience",

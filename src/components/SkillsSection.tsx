@@ -284,8 +284,9 @@ export default function SkillsSection() {
             <button
               key={cat}
               type="button"
+              aria-pressed={active}
               onClick={() => setActiveCategory(cat)}
-              className={`relative rounded-full px-4 py-1.5 font-mono text-xs transition duration-300 ${
+              className={`relative isolate rounded-full px-4 py-1.5 font-mono text-xs transition duration-300 ${
                 active
                   ? "text-bg font-semibold"
                   : "border border-line text-muted hover:border-faint hover:text-ink"
@@ -320,9 +321,9 @@ export default function SkillsSection() {
               <div className="mb-4 flex items-center justify-between border-b border-line/60 pb-3">
                 <div className="flex items-center gap-2.5">
                   <span className="text-lg">{DOMAIN_ICONS[group.group] || "✦"}</span>
-                  <h4 className="text-base font-semibold tracking-tight text-ink">
+                  <h3 className="text-base font-semibold tracking-tight text-ink">
                     {group.group}
-                  </h4>
+                  </h3>
                 </div>
                 <span className="font-mono text-[11px] text-faint">
                   {group.items.length} competencies
@@ -339,6 +340,7 @@ export default function SkillsSection() {
                     <button
                       key={it}
                       type="button"
+                      aria-pressed={isSelected}
                       onClick={() => setSelectedSkillName(it)}
                       className={`group/chip relative flex items-center gap-2 rounded-xl border px-3 py-2 text-left text-xs transition duration-200 ${
                         isSelected
@@ -392,7 +394,7 @@ export default function SkillsSection() {
                   {selectedSkill.name}
                 </h3>
 
-                <p className="mt-2 text-xs leading-relaxed text-muted font-light">
+                <p className="mt-2 text-sm leading-relaxed text-muted font-light">
                   {selectedSkill.description}
                 </p>
 
@@ -420,7 +422,7 @@ export default function SkillsSection() {
                           className="flex items-center justify-between rounded-xl border border-line bg-raised/60 p-3 transition hover:border-accent/40"
                         >
                           <div>
-                            <h5 className="text-xs font-semibold text-ink">{proj.name}</h5>
+                            <h4 className="text-xs font-semibold text-ink">{proj.name}</h4>
                             <p className="text-[11px] text-muted line-clamp-1">{proj.summary}</p>
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0 ml-2">

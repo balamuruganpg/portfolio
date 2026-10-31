@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(profile.site),
   title: `${profile.name}: ${profile.role}`,
   description: `${profile.name}, ${profile.role} in ${profile.location}. VeraScan (PyPI), Bull/Bear Autopilot, LungScan AI, PneumoScan. Ask the grounded portfolio assistant.`,
+  authors: [{ name: profile.name, url: profile.site }],
+  robots: { index: true, follow: true },
+  twitter: { card: "summary", title: `${profile.name}: ${profile.role}`, description: profile.hero },
   icons: {
     icon: "/logo.png",
     shortcut: "/logo.png",
@@ -19,6 +22,8 @@ export const metadata: Metadata = {
     description: profile.hero,
     url: profile.site,
     type: "website",
+    siteName: profile.name,
+    locale: "en_IN",
   },
   alternates: { canonical: profile.site },
 };
@@ -67,6 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <a href="#main-content" className="skip-link">Skip to content</a>
         <Providers>{children}</Providers>
       </body>
     </html>

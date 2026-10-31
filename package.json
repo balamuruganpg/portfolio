@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test:e2e": "node scripts/e2e.mjs"
+    "test:e2e": "node scripts/e2e.mjs",
+    "test:assistant": "node scripts/assistant-test.mjs",
+    "test:guards": "node --experimental-strip-types scripts/guard-test.mts"
   },
   "dependencies": {
     "framer-motion": "^14.0.0",

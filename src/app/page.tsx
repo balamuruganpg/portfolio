@@ -4,6 +4,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import Assistant from "@/components/Assistant";
 import CommandPalette from "@/components/CommandPalette";
+import About from "@/components/About";
 import Hero from "@/components/Hero";
 import Nav from "@/components/Nav";
 import Projects from "@/components/Projects";
@@ -12,39 +13,20 @@ import { Arrow, AskButton, Ext } from "@/components/ui";
 import {
   EASE,
   Magnetic,
-  Marquee,
   Reveal,
   onSpot,
 } from "@/components/motion";
 import {
+  achievements,
   certifications,
   education,
   experience,
   profile,
   projects,
-  skills,
 } from "@/data/site";
 
 const CASE_ORDER = ["rai-axiom", "verascan", "certiroute", "bull-bear-autopilot", "lungscan-ai", "ai-leetcode-agent"];
 const caseRows = CASE_ORDER.map((s) => projects.find((p) => p.slug === s)!).filter((p) => p?.caseStudy);
-
-const MARQUEE_TECH = [
-  "RAI-Axiom (PPO Sim-to-Real)",
-  "VeraScan on PyPI",
-  "DenseNet121 & MobileNetV2",
-  "Grad-CAM Explainability",
-  "Train/Eval Contamination Detection",
-  "13-Gram & Semantic Overlap",
-  "Multi-Agent Indian IPO Analysis",
-  "Deterministic Fact-Checking",
-  "568 Automated Tests",
-  "5-Provider LLM Fallback",
-  "Playwright Browser Workers",
-  "FastAPI + React + Supabase",
-  "Streamlit Dashboards",
-  "GCP & OCI Cloud",
-  "Python Packaging",
-];
 
 function SectionHead({
   id,
@@ -58,19 +40,19 @@ function SectionHead({
   sub?: string;
 }) {
   return (
-    <div id={id} className="mb-10 pt-16">
+    <div id={id} className="section-heading mb-8 pt-12 md:pt-16">
       <Reveal>
         <div className="flex items-center gap-3">
           <span className="font-mono text-xs font-semibold text-accent tracking-widest">
             {index}
           </span>
           <span className="h-px w-8 bg-accent/40" />
-          <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-muted">
+          <h2 className="text-2xl font-semibold tracking-tight text-ink md:text-4xl">
             {title}
           </h2>
         </div>
         {sub && (
-          <p className="mt-3 max-w-2xl text-lg font-light tracking-tight text-ink/80 md:text-xl">
+          <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted">
             {sub}
           </p>
         )}
@@ -84,18 +66,15 @@ export default function Home() {
     <div className="relative min-h-screen bg-bg text-ink selection:bg-accent selection:text-bg">
       <Nav />
 
-      <main>
+      <main id="main-content">
         {/* HERO SECTION */}
         <Hero />
 
-        {/* TECH MARQUEE STRIP */}
-        <div className="border-y border-line/70 bg-surface/50 py-3.5 backdrop-blur-sm">
-          <Marquee items={MARQUEE_TECH} duration={48} />
-        </div>
+        <About />
 
         <div className="mx-auto max-w-6xl px-5">
           {/* SECTION 01: FEATURED WORK */}
-          <section className="pb-24 content-visibility-auto">
+          <section className="pb-12 md:pb-20">
             <SectionHead
               id="featured"
               index="01"
@@ -114,7 +93,7 @@ export default function Home() {
                     <div className="grid gap-8 lg:grid-cols-12 lg:items-center">
                       {/* Left: Project Identity & Links */}
                       <div className="lg:col-span-4">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="font-mono text-xs text-accent">0{idx + 1}</span>
                           <span className="h-1.5 w-1.5 rounded-full bg-line" />
                           <span className="font-mono text-xs text-muted">CASE STUDY</span>
@@ -142,7 +121,7 @@ export default function Home() {
                           </p>
                         )}
 
-                        <p className="mt-2.5 text-xs leading-relaxed text-muted line-clamp-3">
+                        <p className="mt-2.5 text-sm leading-relaxed text-muted">
                           {p.summary}
                         </p>
 
@@ -193,7 +172,7 @@ export default function Home() {
                             <span className="h-1 w-1 rounded-full bg-accent" />
                             PROBLEM STATEMENT
                           </p>
-                          <p className="text-sm leading-relaxed text-ink/90 font-light">
+                          <p className="text-sm leading-relaxed text-ink/90 font-normal">
                             {p.caseStudy!.problem}
                           </p>
                         </div>
@@ -202,7 +181,7 @@ export default function Home() {
                             <span className="h-1 w-1 rounded-full bg-muted" />
                             TECHNICAL METHOD
                           </p>
-                          <p className="text-xs leading-relaxed text-muted">
+                          <p className="text-sm leading-relaxed text-muted">
                             {p.caseStudy!.method}
                           </p>
                         </div>
@@ -242,7 +221,7 @@ export default function Home() {
           </section>
 
           {/* SECTION 02: ALL PROJECTS */}
-          <section className="pb-24 content-visibility-auto">
+          <section className="pb-12 md:pb-20">
             <SectionHead
               id="projects"
               index="02"
@@ -253,7 +232,7 @@ export default function Home() {
           </section>
 
           {/* SECTION 03: EXPERIENCE & EDUCATION */}
-          <section className="pb-24 content-visibility-auto">
+          <section className="pb-12 md:pb-20">
             <SectionHead
               id="experience"
               index="03"
@@ -283,12 +262,13 @@ export default function Home() {
                       <div key={e.org} className="relative">
                         <span className="absolute -left-6 top-1.5 h-2 w-2 rounded-full border-2 border-accent bg-bg shadow-[0_0_8px_rgba(61,220,132,0.6)]" />
                         <div className="flex flex-wrap items-baseline justify-between gap-1">
-                          <h4 className="font-semibold text-ink">{e.org}</h4>
+                          <h3 className="font-semibold text-ink">{e.org}</h3>
                           <span className="font-mono text-xs text-accent">{e.period}</span>
                         </div>
                         <p className="mt-0.5 text-xs text-muted font-medium">
                           {e.role} {e.detail ? `· ${e.detail}` : ""} · {e.mode}
                         </p>
+                        <ul className="mt-3 list-disc space-y-2 pl-4 text-sm leading-relaxed text-muted">{e.outcomes.map((outcome) => <li key={outcome}>{outcome}</li>)}</ul>
                       </div>
                     ))}
                   </div>
@@ -311,12 +291,13 @@ export default function Home() {
                     </span>
                   </div>
 
+                  <p className="mb-6 rounded-xl border border-accent/30 bg-accent/5 p-4 text-lg font-semibold text-accent">First Rank in CSE, NIT <span className="block font-mono text-xs font-normal text-muted">2025–2026 · CGPA 90.6%</span></p>
                   <div className="relative space-y-8 pl-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-px before:bg-line">
                     {education.map((ed) => (
                       <div key={ed.degree} className="relative">
                         <span className="absolute -left-6 top-1.5 h-2 w-2 rounded-full border-2 border-accent bg-bg shadow-[0_0_8px_rgba(61,220,132,0.6)]" />
                         <div className="flex flex-wrap items-baseline justify-between gap-1">
-                          <h4 className="font-semibold text-ink">{ed.degree}</h4>
+                          <h3 className="font-semibold text-ink">{ed.degree}</h3>
                           {ed.period && (
                             <span className="font-mono text-xs text-muted">{ed.period}</span>
                           )}
@@ -331,8 +312,21 @@ export default function Home() {
             </div>
           </section>
 
+          <section id="achievements" aria-labelledby="achievements-title" className="pb-12 md:pb-20">
+            <p className="label text-accent">Learning, measured</p>
+            <h2 id="achievements-title" className="mt-3 mb-7 text-3xl font-semibold tracking-tight">Achievements</h2>
+            <div className="grid gap-4 md:grid-cols-3">
+              {achievements.map((a, i) => <motion.article key={a.title} whileHover={{ y: -5 }} className="rounded-2xl border border-line bg-surface p-6">
+                <span className="font-mono text-xs text-muted">0{i + 1}</span>
+                <h3 className="mt-5 text-2xl font-semibold tracking-tight text-ink">{a.title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-muted">{a.detail}</p>
+                {a.href.startsWith("http") ? <Ext href={a.href} className="link mt-6 inline-block text-sm text-accent">View profile ↗</Ext> : <a href={a.href} className="link mt-6 inline-block text-sm text-accent">View evidence ↗</a>}
+              </motion.article>)}
+            </div>
+          </section>
+
           {/* SECTION 04: SKILLS */}
-          <section className="pb-24 content-visibility-auto">
+          <section className="pb-12 md:pb-20">
             <SectionHead
               id="skills"
               index="04"
@@ -344,7 +338,7 @@ export default function Home() {
           </section>
 
           {/* SECTION 05: CERTIFICATIONS */}
-          <section className="pb-24 content-visibility-auto">
+          <section className="pb-12 md:pb-20">
             <SectionHead
               id="certs"
               index="05"
@@ -357,13 +351,13 @@ export default function Home() {
                 <Reveal key={c} delay={Math.min(idx * 0.02, 0.15)} y={12}>
                   <div
                     onMouseMove={onSpot}
-                    className="spot group flex items-center justify-between rounded-xl border border-line bg-surface px-4 py-3.5 transition-colors hover:border-accent/40"
+                    className="spot group flex h-full items-start justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-3.5 transition-colors hover:border-accent/40"
                   >
-                    <span className="text-xs font-medium text-ink/90 group-hover:text-accent transition-colors">
+                    <span className="text-sm leading-relaxed font-medium text-ink/90 group-hover:text-accent transition-colors">
                       {c}
                     </span>
                     <span className="shrink-0 font-mono text-[10px] text-accent/60">
-                      ✓ verified
+                      ✓
                     </span>
                   </div>
                 </Reveal>
@@ -372,12 +366,12 @@ export default function Home() {
           </section>
 
           {/* SECTION 06: HOW THE ASSISTANT WORKS */}
-          <section className="pb-24 content-visibility-auto">
+          <section className="pb-12 md:pb-20">
             <SectionHead
               id="how"
               index="06"
               title="Grounded Architecture"
-              sub="How the portfolio assistant guarantees factual answers with zero open-web hallucination."
+              sub="Source-bound retrieval, clickable citations, and a guard against unsupported claims."
             />
 
             <div className="grid gap-4 md:grid-cols-3">
@@ -386,7 +380,7 @@ export default function Home() {
                   step: "01",
                   title: "Retrieve",
                   detail:
-                    "Keyword and sectional token matching across all 14 project records, experience, education and resume text. Out-of-domain queries are rejected instantly.",
+                    "Keyword and sectional token matching across the project records, experience, education and resume text. Out-of-domain queries are rejected instantly.",
                   tag: "Deterministic Corpus",
                 },
                 {
@@ -401,7 +395,7 @@ export default function Home() {
                   title: "Generate & Guard",
                   detail:
                     "Single LLM call bounded to context. An anti-hallucination guard rejects any output introducing numbers or academic claims not found verbatim in source docs.",
-                  tag: "Zero Hallucination",
+                  tag: "Source Guard",
                 },
               ].map((item, i) => (
                 <Reveal key={item.step} delay={i * 0.08} y={14}>
@@ -418,11 +412,11 @@ export default function Home() {
                       </span>
                     </div>
 
-                    <h4 className="mt-4 text-lg font-semibold text-ink group-hover:text-accent transition-colors">
+                    <h3 className="mt-4 text-lg font-semibold text-ink group-hover:text-accent transition-colors">
                       {item.title}
-                    </h4>
+                    </h3>
 
-                    <p className="mt-2 text-xs leading-relaxed text-muted font-light">
+                    <p className="mt-2 text-sm leading-relaxed text-muted font-normal">
                       {item.detail}
                     </p>
                   </div>
@@ -454,8 +448,10 @@ export default function Home() {
       </main>
 
       {/* FOOTER & CONTACT */}
-      <footer id="contact" className="border-t border-line/80 bg-surface/30">
+      <footer id="contact" aria-labelledby="contact-title" className="border-t border-line/80 bg-surface/30">
         <div className="mx-auto max-w-6xl px-5 py-16">
+          <p className="label text-accent">Let’s connect</p>
+          <h2 id="contact-title" className="mt-3 mb-10 text-3xl font-semibold tracking-tight md:text-4xl">Have an AI/ML role in mind?</h2>
           <div className="grid gap-10 md:grid-cols-12">
             <div className="md:col-span-6">
               <div className="flex items-center gap-2.5">
@@ -496,12 +492,12 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-8 md:col-span-6 sm:grid-cols-3">
+            <div className="grid grid-cols-2 gap-6 md:col-span-6 lg:grid-cols-3">
               <div>
                 <p className="label mb-3 !text-[10px]">DIRECT</p>
                 <ul className="space-y-2 text-xs">
                   <li>
-                    <a className="link text-muted hover:text-ink" href={`mailto:${profile.email}`}>
+                    <a className="link break-all text-muted hover:text-ink" href={`mailto:${profile.email}`}>
                       {profile.email}
                     </a>
                   </li>

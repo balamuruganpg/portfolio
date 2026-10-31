@@ -62,17 +62,23 @@ export const profile = {
   github: "https://github.com/balamuruganpg",
   linkedin: "https://www.linkedin.com/in/balamuruganpg",
   leetcode: "https://leetcode.com/u/balamurugan_pg/",
-  resume: "/BalamuruganPG_Resume.pdf",
+  resume: "/Updated%20Resume/BALAMURUGAN_PG_NIT_CSE.pdf",
   availability: "Open to AI/ML internships and junior roles",
-  hero: "I build ML systems that show their receipts: contamination checks, cited agents, and models you can open and try.",
+  hero: "I build AI systems with verified results - and I publish the misses too",
 };
+
+export const achievements = [
+  { title: "First Rank in CSE, NIT", detail: "2025–2026 · Nehru Institute of Technology, Coimbatore", href: "#experience" },
+  { title: "330+", detail: "LeetCode DSA problems solved", href: profile.leetcode },
+  { title: "VeraScan on PyPI", detail: "Published train/eval contamination detection library", href: "#case-verascan" },
+];
 
 export const education = [
   {
     degree: "B.E. Computer Science and Engineering",
     school: "Nehru Institute of Technology, Coimbatore (Anna University)",
     period: "2023–2027",
-    detail: "CGPA 90.6% · First in CSE, 2025–2026",
+    detail: "CGPA 90.6% · First Rank in CSE, NIT, 2025–2026",
   },
   {
     degree: "Higher Secondary (12th)",
@@ -82,6 +88,7 @@ export const education = [
   },
 ];
 
+// Internship details transcribed from public/Updated Resume/BALAMURUGAN_PG_NIT_CSE.pdf.
 export const experience = [
   {
     org: "Neo Zeno Talent",
@@ -89,6 +96,7 @@ export const experience = [
     mode: "Remote",
     period: "May–Aug 2026",
     detail: "",
+    outcomes: ["Worked with Python, Pandas, NumPy and Scikit-learn for data preprocessing and basic machine learning tasks.", "Learned model training, evaluation and data analysis techniques using real-world datasets."],
   },
   {
     org: "Yuva Intern",
@@ -96,6 +104,7 @@ export const experience = [
     mode: "Remote",
     period: "Mar–Apr 2026",
     detail: "Automotive AI",
+    outcomes: ["Completed an introductory internship focused on AI applications in the automotive domain.", "Worked on basic AI/ML tasks with Python-based tools and participated in remote technical discussions with mentors."],
   },
 ];
 

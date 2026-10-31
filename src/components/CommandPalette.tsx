@@ -14,6 +14,8 @@ interface Item {
 }
 
 const SECTIONS = [
+  ["About me", "about"],
+  ["Achievements", "achievements"],
   ["Featured work", "featured"],
   ["All projects", "projects"],
   ["Experience & education", "experience"],

@@ -27,10 +27,10 @@ ok("every external link has target=_blank + noopener", badTargets.length === 0, 
 
 // --- resume buttons point to the local PDF, never GitHub
 const resumeHrefs = await page.$$eval("a[download]", (as) => as.map((a) => a.getAttribute("href")));
-const resumeRes = await page.request.get(`${BASE}/BalamuruganPG_Resume.pdf`);
+const resumeRes = await page.request.get(`${BASE}/Updated%20Resume/BALAMURUGAN_PG_NIT_CSE.pdf`);
 ok(
   "resume download serves local PDF",
-  resumeHrefs.length >= 2 && resumeHrefs.every((h) => h === "/BalamuruganPG_Resume.pdf") && resumeRes.ok() && (resumeRes.headers()["content-type"] || "").includes("pdf"),
+  resumeHrefs.length >= 2 && resumeHrefs.every((h) => h === "/Updated%20Resume/BALAMURUGAN_PG_NIT_CSE.pdf") && resumeRes.ok() && (resumeRes.headers()["content-type"] || "").includes("pdf"),
   `${resumeHrefs.length} buttons, status ${resumeRes.status()}, ${resumeRes.headers()["content-type"]}`,
 );
 
@@ -157,7 +157,7 @@ ok("RAI-Axiom answer cites RAI-Axiom", rai.cites.includes("RAI-Axiom"), `citatio
 ok("RAI-Axiom mentions repo or org", /axiom-sim2real\/RAI-Axiom/i.test(rai.text) || /axiom-sim2real/i.test(rai.text), rai.text);
 ok("RAI-Axiom mentions Balamurugan", /balamu[rl]ugan/i.test(rai.text), rai.text);
 ok("RAI-Axiom mentions Jason Pandian", /jason\s+pandian/i.test(rai.text), rai.text);
-ok("RAI-Axiom does not claim to beat buy-and-hold", !/beats? buy-and-hold/i.test(rai.text));
+ok("RAI-Axiom preserves the SPY tie and does not claim a win", /\btie(?:s|d)? (?:with )?SPY\b/i.test(rai.text) && /\b(?:behind|trails?|trailed|lags?|lagged) SPY\b/i.test(rai.text) && !/(?:RAI[-\u2011]Axiom|policy|it)\s+(?:consistently\s+)?(?:beats?|outperforms?)\s+(?:SPY|buy.and.hold)/i.test(rai.text));
 
 // citation chip jumps to RAI-Axiom card
 await page.locator('[data-testid="assistant-answer"]').last().locator('[data-citation="RAI-Axiom"]').click();

@@ -5,7 +5,7 @@
 - Role: AI/ML Engineer
 - Location: Coimbatore, Tamil Nadu, India
 - Availability: Open to AI/ML internships and junior roles
-- Education: B.E. Computer Science and Engineering, Nehru Institute of Technology, Coimbatore (Anna University), 2023–2027 (CGPA 90.6%, First in CSE, 2025–2026).
+- Education: B.E. Computer Science and Engineering, Nehru Institute of Technology, Coimbatore (Anna University), 2023–2027 (CGPA 90.6%, First Rank in CSE, NIT, 2025–2026).
 - Contact: balamuruganpg@outlook.com · +91 94860 14297 · https://balamuruganpg.in · https://github.com/balamuruganpg · https://leetcode.com/u/balamurugan_pg/
 
 ## Ongoing Research: RAI-Axiom
@@ -59,3 +59,7 @@
 - LLMs & Multi-Agent: Coordinated multi-agent topologies, multi-provider LLM fallback, deterministic fact-checking, retrieval-grounded systems.
 - Data & Evaluation: Train/eval contamination auditing, N-gram and semantic overlap, statistical EDA.
 - Engineering & Stack: Python, FastAPI, React, Next.js, Supabase, Playwright, Linux, GCP, OCI.
+
+## Personal Achievements
+- First Rank in CSE, NIT (Nehru Institute of Technology, Coimbatore), 2025–2026.
+- Solved 330+ LeetCode DSA problems (updated by Balamurugan on 2026-10-31). This personal achievement is separate from the AI LeetCode Agent project's 230+ accepted submissions.

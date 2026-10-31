@@ -15,8 +15,6 @@ export const EASE = [0.22, 1, 0.36, 1] as const;
 /* ------------------------------------------------------------------ Reveal */
 export function Reveal({
   children,
-  delay = 0,
-  y = 16,
   className,
 }: {
   children: React.ReactNode;
@@ -24,21 +22,9 @@ export function Reveal({
   y?: number;
   className?: string;
 }) {
-  const reduce = useReducedMotion();
-  if (reduce) {
-    return <div className={className}>{children}</div>;
-  }
-  return (
-    <motion.div
-      className={className}
-      initial={{ opacity: 0, y: Math.min(y, 16) }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "0px 0px -40px 0px" }}
-      transition={{ duration: 0.45, delay: Math.min(delay, 0.2), ease: EASE }}
-    >
-      {children}
-    </motion.div>
-  );
+  // Render evidence immediately. Server/client motion preferences must never
+  // leave server-rendered opacity: 0 on a hydrated static element.
+  return <div className={className}>{children}</div>;
 }
 
 /* --------------------------------------------------------------- SplitText */

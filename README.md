@@ -13,7 +13,7 @@
 [![Playwright](https://img.shields.io/badge/Playwright-40%2F40_E2E_Tests-45ba4b?style=flat-square&logo=playwright)](https://playwright.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
-[🌐 **Live Website**](https://balamuruganpg.in) · [📄 **Resume (PDF)**](https://balamuruganpg.in/BalamuruganPG_Resume.pdf) · [💼 **LinkedIn**](https://www.linkedin.com/in/balamuruganpg) · [🐙 **GitHub**](https://github.com/balamuruganpg) · [🧩 **LeetCode**](https://leetcode.com/u/balamurugan_pg/)
+[🌐 **Live Website**](https://balamuruganpg.in) · [📄 **Resume (PDF)**](https://balamuruganpg.in/Updated%20Resume/BALAMURUGAN_PG_NIT_CSE.pdf) · [💼 **LinkedIn**](https://www.linkedin.com/in/balamuruganpg) · [🐙 **GitHub**](https://github.com/balamuruganpg) · [🧩 **LeetCode**](https://leetcode.com/u/balamurugan_pg/)
 
 </div>
 
@@ -138,14 +138,17 @@ Add your API keys:
 # Google Gemini API Key (optional)
 GEMINI_API_KEY=your_gemini_api_key
 
-# Groq Cloud API Key (optional)
+# Groq is the preferred provider (optional)
 GROQ_API_KEY=your_groq_api_key
+GROQ_MODEL=openai/gpt-oss-120b
 
 # Optional model override (defaults to gemini-3.8-flash)
 GEMINI_MODEL=gemini-3.8-flash
 ```
 
-*(Note: API keys configured in `.env.local` are strictly server-side and never exposed to client browsers).*
+Keys stay in `.env.local` (ignored by Git), or in your hosting environment. Do not use `NEXT_PUBLIC_` variables. Restart the server after changing keys. There is no public key-entry or key-saving endpoint.
+
+The assistant prefers Groq (`openai/gpt-oss-120b`, then `openai/gpt-oss-20b`) with a total provider budget of 12 seconds. Existing Gemini and OpenRouter configurations remain optional fallbacks. If generation is unavailable or fails source validation, the assistant returns the original portfolio facts with clickable citations.
 
 ### 4. Run the Development Server
 ```bash
@@ -161,7 +164,7 @@ The repository includes a thorough automated Playwright test suite (`scripts/e2e
 1. Complete filter tab isolation (`All: 15`, `Agents: 2`, `Deep Learning: 5`, etc.).
 2. External HTTP 200 health checks for all live apps, PyPI packages, and GitHub repositories.
 3. Assistant grounding against hallucination attacks, off-topic prompts, and citation spotlight jumping.
-4. Local PDF resume asset delivery (`/BalamuruganPG_Resume.pdf`).
+4. Local PDF resume asset delivery (`/Updated%20Resume/BALAMURUGAN_PG_NIT_CSE.pdf`).
 
 To run the verification suite:
 ```bash
@@ -171,6 +174,13 @@ npm start
 
 # 2. In a second terminal, execute the test runner:
 npm run test:e2e
+
+# No network or key required for deterministic agent and guard checks:
+npm run test:assistant
+npm run test:guards
+
+# With the local server running (requires installed Edge):
+node scripts/header-agent-e2e.mjs
 ```
 
 ```

@@ -1,441 +1,136 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { STARTER_QUESTIONS } from "@/data/site";
 import { EV, emit } from "./ui";
 
-interface Citation {
-  label: string;
-  href: string;
-  section: string;
-}
+interface Citation { label: string; href: string; section: string; index?: number }
 interface Msg {
   role: "user" | "assistant";
   text: string;
   citations?: Citation[];
-  mode?: "llm" | "offline" | "guarded" | "refused" | "error";
+  mode?: "llm" | "offline" | "guarded" | "refused" | "error" | "greeting" | "cancelled";
   note?: string;
+  suggestions?: string[];
 }
-
-const MODE_LABEL: Record<string, string> = {
-  llm: "⚡ retrieved → cited → generated",
-  offline: "model offline · retrieval only",
-  guarded: "guard tripped · retrieval only",
-  refused: "out of scope",
-};
+const modes: Record<string, string> = { llm: "Source-checked answer", offline: "Original portfolio facts", guarded: "Original facts · generated answer withheld", refused: "Outside portfolio scope", greeting: "Ready to explore", cancelled: "Stopped", error: "Request interrupted" };
 
 export default function Assistant() {
+  const reduce = useReducedMotion();
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [provider, setProvider] = useState<string | null>(null);
+  const [copied, setCopied] = useState<number | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const launcherRef = useRef<HTMLButtonElement>(null);
+  const controller = useRef<AbortController | null>(null);
+  const msgsRef = useRef(msgs);
   const busyRef = useRef(false);
-  const [hasKey, setHasKey] = useState(false);
-  const [showKeyConfig, setShowKeyConfig] = useState(false);
-  const [keyInput, setKeyInput] = useState("");
-  const [keySaving, setKeySaving] = useState(false);
-  const [keyStatusMsg, setKeyStatusMsg] = useState("");
+  msgsRef.current = msgs;
 
   useEffect(() => {
-    const saved = localStorage.getItem("portfolio_gemini_key") || "";
-    if (saved) {
-      setKeyInput(saved);
-      setHasKey(true);
-    }
-    fetch("/api/chat")
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.hasKey) setHasKey(true);
-      })
-      .catch(() => {});
+    // Retire the old browser key flow; credentials belong only on the server.
+    try { localStorage.removeItem("portfolio_gemini_key"); } catch {}
+    fetch("/api/chat").then(r => r.json()).then(d => setProvider(d.hasKey ? d.provider : null)).catch(() => {});
+    return () => controller.current?.abort();
   }, []);
-
-  const handleSaveKey = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = keyInput.trim();
-    if (!trimmed) return;
-    setKeySaving(true);
-    setKeyStatusMsg("");
-    try {
-      const res = await fetch("/api/save-key", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: trimmed }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to save key");
-      localStorage.setItem("portfolio_gemini_key", trimmed);
-      setHasKey(true);
-      setKeyStatusMsg("✓ Key activated and saved to .env.local!");
-      setTimeout(() => setShowKeyConfig(false), 1600);
-    } catch (err) {
-      setKeyStatusMsg(err instanceof Error ? err.message : "Error saving key");
-    } finally {
-      setKeySaving(false);
-    }
-  };
-
-  const msgsRef = useRef<Msg[]>([]);
-  msgsRef.current = msgs;
 
   const ask = useCallback(async (q: string) => {
     const question = q.trim();
-    if (!question || busyRef.current) return;
+    if (!question || busyRef.current || question.length > 600) return;
     busyRef.current = true;
-    setOpen(true);
-    setBusy(true);
-    setInput("");
-    const history = msgsRef.current.slice(-6).map((m) => ({
-      role: m.role,
-      text: m.text,
-      citations: m.citations,
-    }));
-    setMsgs((m) => [...m, { role: "user", text: question }]);
+    setOpen(true); setBusy(true); setInput("");
+    const history = msgsRef.current.filter(m => m.mode !== "error" && m.mode !== "cancelled").slice(-6).map(m => ({ role: m.role, text: m.text, citations: m.citations }));
+    setMsgs(m => [...m, { role: "user", text: question }]);
+    const abort = new AbortController(); controller.current = abort;
+    const timer = setTimeout(() => abort.abort("timeout"), 20_000);
     try {
-      const storedKey = typeof window !== "undefined" ? localStorage.getItem("portfolio_gemini_key") || "" : "";
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(storedKey ? { "x-gemini-key": storedKey } : {}),
-        },
-        body: JSON.stringify({ question, apiKey: storedKey, history }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Request failed");
-      setMsgs((m) => [
-        ...m,
-        { role: "assistant", text: data.answer, citations: data.citations, mode: data.mode, note: data.note },
-      ]);
-    } catch (e) {
-      setMsgs((m) => [
-        ...m,
-        { role: "assistant", text: e instanceof Error ? e.message : "Something went wrong.", mode: "error" },
-      ]);
+      const response = await fetch("/api/chat", { method: "POST", signal: abort.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question, history }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "I couldn't complete that request. Please try again.");
+      if (typeof data.answer !== "string") throw new Error("The response was incomplete. Please try again.");
+      setMsgs(m => [...m, { role: "assistant", text: data.answer, citations: data.citations, mode: data.mode, note: data.note, suggestions: data.suggestions }]);
+    } catch (error) {
+      const stopped = abort.signal.aborted && abort.signal.reason !== "timeout";
+      setMsgs(m => [...m, { role: "assistant", text: stopped ? "Stopped. Ask another question whenever you're ready." : abort.signal.aborted ? "That took too long. Please try again." : error instanceof Error ? error.message : "Connection interrupted. Please try again.", mode: stopped ? "cancelled" : "error" }]);
     } finally {
-      busyRef.current = false;
-      setBusy(false);
+      clearTimeout(timer); controller.current = null; busyRef.current = false; setBusy(false);
+      inputRef.current?.focus();
     }
   }, []);
 
   useEffect(() => {
-    const onAsk = (e: Event) => ask((e as CustomEvent<string>).detail);
-    const onOpen = () => {
-      setOpen(true);
-      setTimeout(() => inputRef.current?.focus(), 50);
-    };
-    window.addEventListener(EV.ask, onAsk);
-    window.addEventListener(EV.openAssistant, onOpen);
-    return () => {
-      window.removeEventListener(EV.ask, onAsk);
-      window.removeEventListener(EV.openAssistant, onOpen);
-    };
+    const onAsk = (event: Event) => { const q = (event as CustomEvent).detail; if (typeof q === "string") ask(q); };
+    const onOpen = () => setOpen(true);
+    window.addEventListener(EV.ask, onAsk); window.addEventListener(EV.openAssistant, onOpen);
+    return () => { window.removeEventListener(EV.ask, onAsk); window.removeEventListener(EV.openAssistant, onOpen); };
   }, [ask]);
-
-  useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
-  }, [msgs, busy]);
-
+  useEffect(() => { listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: reduce ? "instant" : "smooth" }); }, [msgs, busy, reduce]);
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const previous = document.activeElement as HTMLElement | null;
+    const timer = setTimeout(() => inputRef.current?.focus(), 80);
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { setOpen(false); return; }
+      if (event.key !== "Tab" || !dialogRef.current?.contains(document.activeElement)) return;
+      const controls = [...dialogRef.current.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled)')];
+      const first = controls[0], last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => { clearTimeout(timer); window.removeEventListener("keydown", onKey); if (previous?.isConnected) previous.focus(); else launcherRef.current?.focus(); };
   }, [open]);
 
-  const onCite = (c: Citation, e: React.MouseEvent) => {
-    if (c.href.startsWith("#p-")) {
-      e.preventDefault();
-      emit(EV.focusProject, c.href.slice(3));
-    }
+  const cite = (c: Citation, event: React.MouseEvent) => {
+    if (c.href.startsWith("#p-")) { event.preventDefault(); emit(EV.focusProject, c.href.slice(3)); }
   };
+  const answerBody = (message: Msg) => message.text.split(/(\[\d+\])/g).map((part, i) => {
+    const number = part.match(/^\[(\d+)\]$/)?.[1];
+    const citation = number && message.citations?.find(c => c.index === Number(number));
+    return citation ? <a key={i} href={citation.href} onClick={e => cite(citation, e)} aria-label={`Source ${number}: ${citation.label}`} className="mx-0.5 inline-flex rounded border border-accent/30 px-1 font-mono text-xs text-accent hover:bg-accent/10">{number}</a> : part;
+  });
+  const lastAnswer = [...msgs].reverse().find(m => m.role === "assistant");
+  const suggestions = lastAnswer?.suggestions ?? STARTER_QUESTIONS;
+  const lastQuestion = [...msgs].reverse().find(m => m.role === "user")?.text;
 
-  return (
-    <>
-      <AnimatePresence>
-        {!open && (
-          <motion.button
-            key="launcher"
-            initial={{ scale: 0.8, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.8, opacity: 0, y: 20 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            type="button"
-            onClick={() => {
-              setOpen(true);
-              setTimeout(() => inputRef.current?.focus(), 50);
-            }}
-            className="fixed right-5 bottom-5 z-40 flex items-center gap-2.5 rounded-full border border-accent/60 bg-surface/95 px-5 py-3 text-sm font-medium text-ink shadow-[0_8px_32px_rgba(0,0,0,0.6),0_0_24px_rgba(61,220,132,0.25)] backdrop-blur-md transition-all hover:border-accent hover:shadow-[0_8px_32px_rgba(0,0,0,0.8),0_0_36px_rgba(61,220,132,0.4)]"
-            aria-label="Open portfolio assistant"
-            data-testid="assistant-launcher"
-          >
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-accent" />
-            </span>
-            <span>Ask about my work</span>
-            <span className="rounded bg-accent/15 px-1.5 py-0.5 font-mono text-[10px] text-accent">AI</span>
-          </motion.button>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {open && (
-          <motion.section
-            key="dialog"
-            initial={{ opacity: 0, y: 30, scale: 0.94 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 24, scale: 0.94 }}
-            transition={{ type: "spring", stiffness: 350, damping: 28 }}
-            role="dialog"
-            aria-label="Portfolio assistant"
-            data-testid="assistant"
-            className="fixed right-3 bottom-3 z-50 flex h-[min(640px,calc(100vh-1.5rem))] w-[min(440px,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-line bg-surface/95 shadow-[0_20px_60px_rgba(0,0,0,0.8),0_0_40px_rgba(61,220,132,0.15)] backdrop-blur-xl"
-          >
-            {/* Header */}
-            <header className="flex items-start justify-between border-b border-line/80 bg-raised/40 px-5 py-3.5 backdrop-blur">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-accent animate-pulse" />
-                  <p className="text-sm font-semibold tracking-tight text-ink">Portfolio Assistant</p>
-                </div>
-                <p className="font-mono text-[11px] text-accent mt-0.5">
-                  Grounded on this site, not the open web.
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowKeyConfig((v) => !v)}
-                  className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[11px] border transition ${
-                    hasKey
-                      ? "border-accent/40 bg-accent/10 text-accent hover:bg-accent/20"
-                      : "border-amber-500/40 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20"
-                  }`}
-                  title={hasKey ? "Gemini API key connected · Click to view/edit" : "Connect Gemini API Key"}
-                >
-                  <span className={`h-1.5 w-1.5 rounded-full ${hasKey ? "bg-accent" : "bg-amber-500 animate-pulse"}`} />
-                  <span>{hasKey ? "AI Active" : "Connect Key"}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="rounded-full p-1 text-muted transition hover:bg-raised hover:text-ink"
-                  aria-label="Close assistant"
-                >
-                  <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M4 4l8 8M12 4l-8 8" />
-                  </svg>
-                </button>
-              </div>
-            </header>
-
-            {/* Key configuration drawer */}
-            <AnimatePresence>
-              {showKeyConfig && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="border-b border-line/80 bg-surface/98 p-4 text-xs transition-all overflow-hidden"
-                >
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="font-semibold text-ink flex items-center gap-1.5">
-                      <svg className="w-3.5 h-3.5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                      </svg>
-                      AI Provider API Key
-                    </span>
-                    <div className="flex gap-2">
-                      <a
-                        href="https://aistudio.google.com/apikey"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-mono text-[10px] text-accent underline hover:brightness-125"
-                      >
-                        Gemini ↗
-                      </a>
-                      <a
-                        href="https://console.groq.com/keys"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-mono text-[10px] text-accent underline hover:brightness-125"
-                      >
-                        Groq (Fast) ↗
-                      </a>
-                    </div>
-                  </div>
-                  <p className="text-muted text-[11px] mb-2.5 leading-relaxed">
-                    Paste your Gemini (<code className="text-accent font-mono">AIzaSy…</code>) or Groq (<code className="text-accent font-mono">gsk_…</code>) key. Saved to <code className="text-accent font-mono">.env.local</code> and activated instantly.
-                  </p>
-                  <form onSubmit={handleSaveKey} className="space-y-2">
-                    <div className="flex gap-2">
-                      <input
-                        type="password"
-                        value={keyInput}
-                        onChange={(e) => setKeyInput(e.target.value)}
-                        placeholder="AIzaSy... or gsk_..."
-                        aria-label="Gemini API Key"
-                        className="flex-1 rounded-lg border border-line bg-bg/90 px-3 py-1.5 font-mono text-xs text-ink placeholder:text-faint focus:border-accent focus:outline-none"
-                      />
-                      <button
-                        type="submit"
-                        disabled={keySaving || !keyInput.trim()}
-                        className="rounded-lg bg-accent px-3.5 py-1.5 text-xs font-semibold text-bg transition hover:brightness-110 disabled:opacity-50"
-                      >
-                        {keySaving ? "Saving…" : "Save"}
-                      </button>
-                    </div>
-                    {keyStatusMsg && (
-                      <p className={`font-mono text-[11px] ${keyStatusMsg.startsWith("✓") ? "text-accent" : "text-amber-500"}`}>
-                        {keyStatusMsg}
-                      </p>
-                    )}
-                  </form>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Messages list */}
-            <div ref={listRef} className="flex-1 space-y-4 overflow-y-auto px-5 py-4 scroll-smooth" aria-live="polite">
-              {msgs.length === 0 && (
-                <div className="space-y-3 pt-2 text-xs text-muted">
-                  <p className="leading-relaxed">
-                    Ask anything about Balamurugan&apos;s AI/ML projects, architectures, benchmarks, internships or hiring status.
-                  </p>
-                  <div className="rounded-lg border border-line bg-raised/50 p-3 font-mono text-[11px] text-faint">
-                    <span className="text-accent">i</span> Answers are synthesized exclusively from verified data on this portfolio with zero hallucination.
-                  </div>
-                </div>
-              )}
-
-              {msgs.map((m, i) =>
-                m.role === "user" ? (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: 12 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="ml-8 rounded-xl bg-accent/15 border border-accent/20 px-3.5 py-2.5 text-sm text-ink font-medium"
-                  >
-                    {m.text}
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="space-y-2 text-sm"
-                    data-testid="assistant-answer"
-                  >
-                    {m.note && (
-                      <div className="flex items-center justify-between gap-2 rounded border border-line/60 bg-raised/60 px-2.5 py-1.5 font-mono text-[11px] text-muted">
-                        <span>{m.note}</span>
-                        {!hasKey && (
-                          <button
-                            type="button"
-                            onClick={() => setShowKeyConfig(true)}
-                            className="text-accent underline font-mono text-[10.5px] whitespace-nowrap hover:brightness-125"
-                          >
-                            + Connect Key
-                          </button>
-                        )}
-                      </div>
-                    )}
-                    <p className="leading-relaxed whitespace-pre-wrap text-ink/90 bg-raised/40 rounded-xl p-3 border border-line/50">
-                      {m.text}
-                    </p>
-
-                    {m.citations && m.citations.length > 0 && (
-                      <div className="pt-1" data-testid="citations">
-                        <p className="label !text-[10px] mb-1.5 flex items-center gap-1.5 text-faint">
-                          <span>SOURCES ON THIS PAGE</span>
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {m.citations.map((c) => (
-                            <a
-                              key={c.label}
-                              href={c.href}
-                              onClick={(e) => onCite(c, e)}
-                              data-citation={c.label}
-                              className="group inline-flex items-center gap-1 rounded-md border border-accent/40 bg-accent/10 px-2 py-0.5 font-mono text-[11px] text-accent transition hover:bg-accent hover:text-bg hover:shadow-[0_0_12px_rgba(61,220,132,0.5)]"
-                            >
-                              <span>{c.label}</span>
-                              <span className="opacity-60 transition group-hover:translate-x-0.5">↗</span>
-                            </a>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {m.mode && MODE_LABEL[m.mode] && (
-                      <p className="font-mono text-[10px] text-faint flex items-center gap-1">
-                        {MODE_LABEL[m.mode]}
-                      </p>
-                    )}
-                  </motion.div>
-                ),
-              )}
-
-              {busy && (
-                <div className="flex items-center gap-2 text-xs font-mono text-muted py-2">
-                  <span className="flex gap-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-accent animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="h-1.5 w-1.5 rounded-full bg-accent animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="h-1.5 w-1.5 rounded-full bg-accent animate-bounce" style={{ animationDelay: "300ms" }} />
-                  </span>
-                  <span>retrieving & verifying…</span>
-                </div>
-              )}
-            </div>
-
-            {/* Footer with starter chips & form */}
-            <div className="border-t border-line/80 bg-raised/30 px-4 pt-3 pb-4">
-              <div className="mb-2.5 flex flex-wrap gap-1.5">
-                {STARTER_QUESTIONS.map((q) => (
-                  <button
-                    key={q}
-                    type="button"
-                    disabled={busy}
-                    onClick={() => ask(q)}
-                    className="rounded-full border border-line bg-surface/70 px-2.5 py-1 text-[11.5px] text-muted transition hover:border-accent hover:text-ink hover:bg-surface disabled:opacity-50"
-                  >
-                    {q}
-                  </button>
-                ))}
-              </div>
-
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  ask(input);
-                }}
-                className="flex items-center gap-2"
-              >
-                <input
-                  ref={inputRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  maxLength={400}
-                  placeholder="Ask about a project, skill or role…"
-                  aria-label="Ask the portfolio assistant"
-                  className="flex-1 rounded-xl border border-line bg-bg/80 px-3.5 py-2.5 text-xs text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition"
-                />
-                <button
-                  type="submit"
-                  disabled={busy || !input.trim()}
-                  className="rounded-xl bg-accent px-4 py-2.5 text-xs font-semibold text-bg transition hover:brightness-110 disabled:opacity-40 shadow-[0_0_16px_rgba(61,220,132,0.3)]"
-                >
-                  Ask
-                </button>
-              </form>
-            </div>
-          </motion.section>
-        )}
-      </AnimatePresence>
-    </>
-  );
+  return <>
+    <AnimatePresence>
+      {!open && <motion.button ref={launcherRef} key="launcher" initial={false} animate={{ opacity: 1, scale: 1 }} whileHover={reduce ? undefined : { y: -3 }} whileTap={{ scale: 0.97 }} type="button" onClick={() => setOpen(true)} className="assistant-launcher fixed right-5 bottom-5 z-40 flex items-center gap-3 rounded-full border border-accent/50 bg-surface px-5 py-3 text-sm font-medium text-ink shadow-xl" aria-label="Open portfolio assistant" data-testid="assistant-launcher"><span className="relative flex h-2 w-2"><span className="absolute inset-0 animate-ping rounded-full bg-accent/40" /><span className="relative h-2 w-2 rounded-full bg-accent" /></span>Ask about my work <span className="font-mono text-xs text-accent">↗</span></motion.button>}
+    </AnimatePresence>
+    <AnimatePresence>
+      {open && <motion.section ref={dialogRef} key="assistant" initial={{ opacity: 0, y: reduce ? 0 : 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: reduce ? 0 : 12 }} transition={{ duration: reduce ? 0 : 0.25 }} role="dialog" aria-label="Portfolio assistant" data-testid="assistant" className="fixed right-3 bottom-3 z-[60] flex h-[min(710px,calc(100dvh-1.5rem))] w-[min(470px,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-2xl">
+        <header className="border-b border-line bg-raised/50 px-5 py-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3"><span aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 font-mono text-xs text-accent">BPG</span><div><h2 className="text-sm font-semibold">Portfolio Assistant</h2><p className="mt-0.5 font-mono text-[10px] text-muted">{provider ? `${provider} configured · evidence checked` : "Evidence mode · no model required"}</p></div></div>
+            <div className="flex items-center gap-1"><button type="button" disabled={busy || !msgs.length} onClick={() => {setMsgs([]);setInput("");inputRef.current?.focus();}} aria-label="Clear conversation" title="New conversation" className="rounded-lg p-2 text-muted hover:bg-raised disabled:opacity-30">↺</button><button type="button" onClick={() => setOpen(false)} aria-label="Close assistant" className="rounded-lg p-2 text-muted hover:bg-raised">✕</button></div>
+          </div>
+          <p className="mt-3 text-xs text-muted">Grounded on this site, not the open web.</p>
+        </header>
+        <div ref={listRef} role="log" aria-label="Conversation" aria-live="polite" aria-relevant="additions" aria-busy={busy} className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-5">
+          {!msgs.length && <div><p className="label text-accent">Meet the work behind the claims</p><h3 className="mt-3 text-2xl font-semibold tracking-tight">What would you like to explore?</h3><p className="mt-3 text-sm leading-relaxed text-muted">Ask about a project, compare the results, or explore Balamurugan’s experience. Every factual answer links back to this portfolio.</p><div className="mt-5 grid gap-2">{STARTER_QUESTIONS.map((q,i) => <button key={q} type="button" onClick={() => ask(q)} className="group flex items-center justify-between rounded-xl border border-line bg-raised/40 px-4 py-3 text-left text-sm transition hover:border-accent/40 hover:bg-raised"><span><span aria-hidden="true" className="mr-3 font-mono text-xs text-accent">0{i+1}</span>{q}</span><span aria-hidden="true" className="text-accent transition group-hover:translate-x-1">↗</span></button>)}</div><p className="mt-5 text-xs leading-relaxed text-muted">I’ll say when something isn’t documented. If a model is unavailable, you’ll still get the original facts with citations.</p></div>}
+          {msgs.map((message,i) => <motion.div key={i} initial={false} animate={{opacity:1}} className={message.role === "user" ? "ml-8 rounded-2xl rounded-tr-sm border border-accent/20 bg-accent/10 px-4 py-3 text-sm" : "space-y-3"} data-testid={message.role === "assistant" ? "assistant-answer" : undefined}>
+            {message.role === "user" ? message.text : <>
+              {message.note && <p className="rounded-lg border border-line bg-raised/50 px-3 py-2 text-xs leading-relaxed text-muted">{message.note}</p>}
+              <div className="whitespace-pre-wrap break-words text-sm leading-7 text-ink">{answerBody(message)}</div>
+              {!!message.citations?.length && <div data-testid="citations"><p className="label mb-2 !text-[10px]">Sources on this page</p><div className="flex flex-wrap gap-2">{message.citations.map(c => <a key={`${c.href}-${c.index}`} href={c.href} onClick={e=>cite(c,e)} data-citation={c.label} className="rounded-lg border border-accent/30 bg-accent/5 px-2.5 py-1.5 text-xs text-accent hover:bg-accent/15">{c.label} ↗</a>)}</div></div>}
+              <div className="flex items-center justify-between gap-3"><span className="font-mono text-[10px] text-muted">{modes[message.mode ?? ""]}</span><button type="button" aria-label="Copy answer" onClick={async()=>{try{await navigator.clipboard.writeText(message.text.replace(/\[\d+\]/g,""));setCopied(i);setTimeout(()=>setCopied(null),1800);}catch{setCopied(null);}}} className="shrink-0 rounded px-2 py-1 text-xs text-muted hover:bg-raised">{copied===i?"Copied ✓":"Copy"}</button></div>
+              {message.mode === "error" && lastQuestion && <button type="button" disabled={busy} onClick={()=>ask(lastQuestion)} aria-label="Try again" className="link text-sm text-accent">Try again ↗</button>}
+            </>}
+          </motion.div>)}
+          {busy && <div role="status" className="flex items-center gap-3 py-2 text-xs text-muted"><span className="flex gap-1" aria-hidden="true">{[0,1,2].map(i=><span key={i} className="h-1.5 w-1.5 animate-bounce rounded-full bg-accent" style={{animationDelay:`${i*140}ms`}} />)}</span>Finding sources and checking the answer…</div>}
+        </div>
+        <div className="border-t border-line bg-raised/30 p-4">
+          {!!msgs.length && <div className="mb-3 flex gap-2 overflow-x-auto pb-1">{suggestions.map(q=><button key={q} type="button" disabled={busy} onClick={()=>ask(q)} className="shrink-0 rounded-full border border-line bg-surface px-3 py-2 text-xs text-muted hover:border-accent/40 disabled:opacity-40">{q}</button>)}</div>}
+          <form onSubmit={e=>{e.preventDefault();ask(input);}} className="flex items-center gap-2"><input ref={inputRef} value={input} onChange={e=>setInput(e.target.value)} maxLength={600} placeholder="Ask about Balamurugan’s work…" aria-label="Ask the portfolio assistant" className="min-w-0 flex-1 rounded-xl border border-line bg-bg px-3 py-3 text-sm text-ink placeholder:text-muted focus-visible:border-accent" />{busy?<button type="button" onClick={()=>controller.current?.abort()} aria-label="Stop response" className="rounded-xl border border-line px-4 py-3 text-sm">Stop</button>:<button type="submit" disabled={!input.trim()} className="rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-bg disabled:opacity-40">Ask</button>}</form>
+          <p className="mt-2 text-center font-mono text-[9px] text-muted">Portfolio facts only · check the linked evidence · Esc to close</p>
+        </div>
+      </motion.section>}
+    </AnimatePresence>
+  </>;
 }
