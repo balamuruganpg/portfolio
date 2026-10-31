@@ -9,6 +9,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(profile.site),
   title: `${profile.name}: ${profile.role}`,
   description: `${profile.name}, ${profile.role} in ${profile.location}. VeraScan (PyPI), Bull/Bear Autopilot, LungScan AI, PneumoScan. Ask the grounded portfolio assistant.`,
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
   openGraph: {
     title: `${profile.name}: ${profile.role}`,
     description: profile.hero,

@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { profile } from "@/data/site";
 import ThemeToggle from "./ThemeToggle";
@@ -42,13 +43,20 @@ export default function Nav() {
       >
         <a href="#top" className="group flex items-center gap-2.5" aria-label="Back to top">
           <motion.span
-            whileHover={{ rotate: [0, -8, 8, 0], scale: 1.08 }}
-            transition={{ duration: 0.5 }}
-            className="grid h-9 w-9 place-items-center rounded-full border border-accent/70 bg-accent/10 font-mono text-[11px] font-bold tracking-tight text-accent shadow-[0_0_20px_rgba(61,220,132,0.25)]"
+            whileHover={{ scale: 1.08 }}
+            transition={{ duration: 0.3 }}
+            className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-accent/70 bg-accent/10 shadow-[0_0_20px_rgba(61,220,132,0.25)]"
           >
-            {profile.initials}
+            <Image
+              src="/logo.png"
+              alt="Balamurugan P G"
+              width={36}
+              height={36}
+              className="h-full w-full object-contain p-0.5"
+              priority
+            />
           </motion.span>
-          <span className="hidden text-sm text-muted transition group-hover:text-ink sm:inline">{profile.name}</span>
+          <span className="hidden text-sm text-muted transition group-hover:text-ink md:inline">{profile.name}</span>
         </a>
 
         <ul className="hidden items-center gap-1 md:flex">

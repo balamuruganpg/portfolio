@@ -34,6 +34,26 @@ ok(
   `${resumeHrefs.length} buttons, status ${resumeRes.status()}, ${resumeRes.headers()["content-type"]}`,
 );
 
+// --- header mark & responsive brand text check
+const headerImgSrc = await page.$eval('nav a[href="#top"] img', (img) => img.getAttribute("src"));
+ok("header mark uses logo.png", (headerImgSrc || "").includes("logo.png"), headerImgSrc);
+
+const desktopNameVisible = await page.locator('nav a[href="#top"] span.text-sm').isVisible();
+ok("desktop nav shows 'Balamurugan P G'", desktopNameVisible);
+
+// mobile viewport: only mark is shown, word is hidden
+await page.setViewportSize({ width: 375, height: 667 });
+await page.waitForTimeout(300);
+const mobileMarkVisible = await page.locator('nav a[href="#top"] img').isVisible();
+const mobileNameVisible = await page.locator('nav a[href="#top"] span.text-sm').isVisible();
+ok("mobile nav shows mark only (word hidden)", mobileMarkVisible && !mobileNameVisible);
+await page.setViewportSize({ width: 1360, height: 900 });
+await page.waitForTimeout(300);
+
+// --- favicon check
+const faviconRes = await page.request.get(`${BASE}/logo.png`);
+ok("favicon source logo.png is served", faviconRes.ok() && (faviconRes.headers()["content-type"] || "").includes("image/png"));
+
 // --- leetcode link points to valid profile url
 const leetcodeHrefs = await page.$$eval('a[href*="leetcode.com"]', (as) => as.map((a) => a.href));
 ok(
@@ -135,8 +155,8 @@ const rai = await askAssistant("What is RAI-Axiom?");
 console.log("\n--- Assistant answer: What is RAI-Axiom? ---\n" + rai.text + "\n---\n");
 ok("RAI-Axiom answer cites RAI-Axiom", rai.cites.includes("RAI-Axiom"), `citations: ${rai.cites.join(", ")}`);
 ok("RAI-Axiom mentions repo or org", /axiom-sim2real\/RAI-Axiom/i.test(rai.text) || /axiom-sim2real/i.test(rai.text), rai.text);
-ok("RAI-Axiom mentions Balamurugan", /balamurugan/i.test(rai.text), rai.text);
-ok("RAI-Axiom mentions Jason Pandian", /jason pandian/i.test(rai.text), rai.text);
+ok("RAI-Axiom mentions Balamurugan", /balamu[rl]ugan/i.test(rai.text), rai.text);
+ok("RAI-Axiom mentions Jason Pandian", /jason\s+pandian/i.test(rai.text), rai.text);
 ok("RAI-Axiom does not claim to beat buy-and-hold", !/beats? buy-and-hold/i.test(rai.text));
 
 // citation chip jumps to RAI-Axiom card

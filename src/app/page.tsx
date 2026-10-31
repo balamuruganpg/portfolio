@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import Assistant from "@/components/Assistant";
 import CommandPalette from "@/components/CommandPalette";
@@ -458,8 +459,14 @@ export default function Home() {
           <div className="grid gap-10 md:grid-cols-12">
             <div className="md:col-span-6">
               <div className="flex items-center gap-2.5">
-                <span className="grid h-8 w-8 place-items-center rounded-full border border-accent bg-accent/10 font-mono text-xs font-bold text-accent">
-                  {profile.initials}
+                <span className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-accent bg-accent/10">
+                  <Image
+                    src="/logo.png"
+                    alt="Balamurugan P G"
+                    width={32}
+                    height={32}
+                    className="h-full w-full object-contain p-0.5"
+                  />
                 </span>
                 <span className="font-semibold text-ink">{profile.name}</span>
               </div>
