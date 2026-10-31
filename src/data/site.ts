@@ -61,7 +61,7 @@ export const profile = {
   phone: "+91 94860 14297",
   github: "https://github.com/balamuruganpg",
   linkedin: "https://www.linkedin.com/in/balamuruganpg",
-  leetcode: "https://leetcode.com/u/balamuruganpg",
+  leetcode: "https://leetcode.com/u/balamurugan_pg/",
   resume: "/BalamuruganPG_Resume.pdf",
   availability: "Open to AI/ML internships and junior roles",
   hero: "I build ML systems that show their receipts: contamination checks, cited agents, and models you can open and try.",

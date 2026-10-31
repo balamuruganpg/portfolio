@@ -13,7 +13,7 @@
 [![Playwright](https://img.shields.io/badge/Playwright-40%2F40_E2E_Tests-45ba4b?style=flat-square&logo=playwright)](https://playwright.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
-[🌐 **Live Website**](https://balamuruganpg.in) · [📄 **Resume (PDF)**](https://balamuruganpg.in/BalamuruganPG_Resume.pdf) · [💼 **LinkedIn**](https://www.linkedin.com/in/balamuruganpg) · [🐙 **GitHub**](https://github.com/balamuruganpg) · [🧩 **LeetCode**](https://leetcode.com/u/balamuruganpg)
+[🌐 **Live Website**](https://balamuruganpg.in) · [📄 **Resume (PDF)**](https://balamuruganpg.in/BalamuruganPG_Resume.pdf) · [💼 **LinkedIn**](https://www.linkedin.com/in/balamuruganpg) · [🐙 **GitHub**](https://github.com/balamuruganpg) · [🧩 **LeetCode**](https://leetcode.com/u/balamurugan_pg/)
 
 </div>
 
@@ -23,7 +23,7 @@
 
 This repository powers **[balamuruganpg.in](https://balamuruganpg.in)** — built from scratch to showcase machine learning systems with concrete, reproducible receipts instead of inflated claims. 
 
-It catalogues **15 projects** (including ongoing sim-to-real RL research, published PyPI packages, and live computer vision apps) alongside an **in-browser AI assistant** strictly grounded to verified site facts.
+It catalogues **17 projects** (including ongoing sim-to-real RL research, published PyPI packages, research prototypes, and live computer vision apps) alongside an **in-browser AI assistant** strictly grounded to verified site facts.
 
 ---
 
@@ -69,16 +69,18 @@ flowchart TD
 | :--- | :--- | :--- | :--- | :--- |
 | **RAI-Axiom** *(Ongoing)* | Deep Learning / RL | PPO portfolio-allocation policy trained purely on synthetic markets (zero real prices during training); evaluated zero-shot across 6 real universes. By Balamurugan P G & Jason Pandian. | **Tested tie with SPY** (out of sample · 10-seed CI) | [Repo](https://github.com/axiom-sim2real/RAI-Axiom) |
 | **VeraScan** | Evaluation / MLOps | 4-tier train/eval benchmark data contamination detection (exact match, 13-gram overlap, fuzzy Levenshtein, semantic embeddings). | **Published on PyPI** (`pip install verascan`) | [Repo](https://github.com/balamuruganpg/verascan) · [PyPI](https://pypi.org/project/verascan/) |
+| **CertiRoute** *(Prototype)* | LLM Routing / Reliability | OpenAI-compatible gateway scoring prompts with a local logistic classifier and routing via conformal risk control. No embeddings or extra model call. | **32.77% offline savings (4.769% regret)** · Live Groq+xAI: 15.96% savings, 12.12% regret (missed 5% target) | [Repo](https://github.com/balamuruganpg/CertiRoute) |
 | **Bull/Bear Autopilot** | Multi-Agent LLMs | Opposing bull/bear financial analyst agents synthesizing Indian IPO filings with page citations and deterministic fact-checking. | **568 automated unit & integration tests** | [Repo](https://github.com/balamuruganpg/bull-bear-autopilot) |
 | **LungScan AI** | Computer Vision | 5-class chest pathology diagnosis using fine-tuned DenseNet121 with Grad-CAM visual heatmaps. FastAPI + React + Supabase on GCP. | **86–88% Test Accuracy** | [Repo](https://github.com/balamuruganpg/LungScan-AI-Chest-Xray-Detection) · [Live App](https://medrag.in) |
 | **PneumoScan** | Computer Vision | MobileNetV2 convolutional neural network for automated pediatric pneumonia detection from radiographic scans. | **92.5% Test Accuracy** | [Repo](https://github.com/balamuruganpg/Pneumonia-Xray-CNN-Detection) · [Live App](https://pneumonia-scan.streamlit.app/) |
 | **AI LeetCode Agent** | Autonomous Agents | Resilient problem solver coordinating 5-provider LLM failover with 4 Playwright browser workers. | **230+ Accepted Submissions** | [Repo](https://github.com/balamuruganpg/ai-leetcode-agent) |
 
 <details>
-<summary><b>📂 View Complete Catalog of All 15 Repositories</b></summary>
+<summary><b>📂 View Complete Catalog of All 17 Repositories</b></summary>
 
 | Project Name | Category | Primary Stack | Key Highlights |
 | :--- | :--- | :--- | :--- |
+| **Signal** | Course | Streamlit, Python, GCP Monitoring | Cloud SLA monitor for U23CS702 with seeded simulation and 4 SLA metrics across light and dark themes. |
 | **ChurnGuard Pro** | Dashboards | Gradient Boosting, Streamlit | Customer retention analytics trained on 7,043 customer records. |
 | **OncoInsight Pro** | Dashboards | GBR/GBC, Statistics, Streamlit | Cancer telemetry and risk stratification dashboard over 17,686 records. |
 | **Household Power RNN** | Deep Learning | Recurrent Neural Network | Time-series electrical telemetry sequence prediction. |
@@ -236,6 +238,7 @@ PASS  no console errors
 - 🌐 [https://balamuruganpg.in](https://balamuruganpg.in)
 - 🐙 GitHub: [@balamuruganpg](https://github.com/balamuruganpg)
 - 💼 LinkedIn: [in/balamuruganpg](https://www.linkedin.com/in/balamuruganpg)
+- 🧩 LeetCode: [u/balamurugan_pg](https://leetcode.com/u/balamurugan_pg/)
 
 ---
 

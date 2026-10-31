@@ -6,7 +6,7 @@
 - Location: Coimbatore, Tamil Nadu, India
 - Availability: Open to AI/ML internships and junior roles
 - Education: B.E. Computer Science and Engineering, Nehru Institute of Technology, Coimbatore (Anna University), 2023–2027 (CGPA 90.6%, First in CSE, 2025–2026).
-- Contact: balamuruganpg@outlook.com · +91 94860 14297 · https://balamuruganpg.in · https://github.com/balamuruganpg
+- Contact: balamuruganpg@outlook.com · +91 94860 14297 · https://balamuruganpg.in · https://github.com/balamuruganpg · https://leetcode.com/u/balamurugan_pg/
 
 ## Ongoing Research: RAI-Axiom
 - Project: RAI-Axiom

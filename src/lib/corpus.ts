@@ -97,7 +97,7 @@ export function buildSiteDocs(): Doc[] {
     section: "contact",
     title: "Contact",
     text: `Email: ${profile.email}. Phone: ${profile.phone}. GitHub: ${profile.github}. LinkedIn: ${profile.linkedin}. LeetCode: ${profile.leetcode}. Website: ${profile.site}. Resume PDF: ${profile.site}${profile.resume}.`,
-    summary: `Email ${profile.email} · Phone ${profile.phone} · LinkedIn ${profile.linkedin} · GitHub ${profile.github}`,
+    summary: `Email ${profile.email} · Phone ${profile.phone} · LinkedIn ${profile.linkedin} · GitHub ${profile.github} · LeetCode ${profile.leetcode}`,
     aliases: ["contact", "email", "phone", "linkedin", "github", "leetcode", "reach", "resume", "cv"],
     href: "#contact",
   });

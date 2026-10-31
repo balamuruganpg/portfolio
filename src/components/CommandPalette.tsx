@@ -83,6 +83,7 @@ export default function CommandPalette() {
       },
       { id: "l-github", group: "Links", label: "GitHub profile", run: () => openExt(profile.github) },
       { id: "l-linkedin", group: "Links", label: "LinkedIn profile", run: () => openExt(profile.linkedin) },
+      { id: "l-leetcode", group: "Links", label: "LeetCode profile", run: () => openExt(profile.leetcode) },
       { id: "l-email", group: "Links", label: `Email ${profile.email}`, run: () => (window.location.href = `mailto:${profile.email}`) },
     ],
     [],

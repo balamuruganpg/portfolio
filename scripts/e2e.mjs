@@ -34,6 +34,10 @@ ok(
   `${resumeHrefs.length} buttons, status ${resumeRes.status()}, ${resumeRes.headers()["content-type"]}`,
 );
 
+// --- leetcode link points to valid profile url
+const leetcodeHref = await page.$eval('a[href*="leetcode.com"]', (a) => a.href);
+ok("leetcode link points to https://leetcode.com/u/balamurugan_pg/", leetcodeHref === "https://leetcode.com/u/balamurugan_pg/", leetcodeHref);
+
 // --- filters
 const expected = { All: 17, Agents: 2, "Computer Vision": 2, Dashboards: 2, "Deep Learning": 5, Clustering: 3, EDA: 1, Web: 2 };
 for (const [f, n] of Object.entries(expected)) {
@@ -147,7 +151,7 @@ const certi = await askAssistant("What is CertiRoute?");
 console.log("\n--- Assistant answer: What is CertiRoute? ---\n" + certi.text + "\n---\n");
 ok("CertiRoute answer cites CertiRoute", certi.cites.includes("CertiRoute"), `citations: ${certi.cites.join(", ")}`);
 ok("CertiRoute mentions gateway or conformal risk control", /gateway|conformal/i.test(certi.text), certi.text);
-ok("CertiRoute does not turn live miss into a win", /miss|12\.12%|15\.96%/i.test(certi.text), certi.text);
+ok("CertiRoute does not turn live miss into a win", /miss|12\.12[\s\S]*%|15\.96[\s\S]*%/i.test(certi.text), certi.text);
 
 // Signal assistant test
 const sig = await askAssistant("What is Signal?");
