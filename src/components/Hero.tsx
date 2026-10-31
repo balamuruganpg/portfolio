@@ -240,6 +240,9 @@ export default function Hero() {
               <Ext href={profile.linkedin} className="group/arrow rounded-full border border-line px-4 py-2.5 text-xs text-muted transition hover:border-faint hover:text-ink">
                 LinkedIn <span className="ml-0.5">↗</span>
               </Ext>
+              <Ext href={profile.leetcode} className="group/arrow rounded-full border border-line px-4 py-2.5 text-xs text-muted transition hover:border-faint hover:text-ink">
+                LeetCode <span className="ml-0.5">↗</span>
+              </Ext>
               <a href={`mailto:${profile.email}`} className="rounded-full border border-line px-4 py-2.5 text-xs text-muted transition hover:border-faint hover:text-ink">
                 Email
               </a>

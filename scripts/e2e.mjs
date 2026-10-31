@@ -35,8 +35,12 @@ ok(
 );
 
 // --- leetcode link points to valid profile url
-const leetcodeHref = await page.$eval('a[href*="leetcode.com"]', (a) => a.href);
-ok("leetcode link points to https://leetcode.com/u/balamurugan_pg/", leetcodeHref === "https://leetcode.com/u/balamurugan_pg/", leetcodeHref);
+const leetcodeHrefs = await page.$$eval('a[href*="leetcode.com"]', (as) => as.map((a) => a.href));
+ok(
+  "all leetcode links point to https://leetcode.com/u/balamurugan_pg/",
+  leetcodeHrefs.length >= 2 && leetcodeHrefs.every((h) => h === "https://leetcode.com/u/balamurugan_pg/"),
+  `${leetcodeHrefs.length} links found: ${leetcodeHrefs.join(", ")}`,
+);
 
 // --- filters
 const expected = { All: 17, Agents: 2, "Computer Vision": 2, Dashboards: 2, "Deep Learning": 5, Clustering: 3, EDA: 1, Web: 2 };
