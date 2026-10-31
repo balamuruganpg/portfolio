@@ -121,10 +121,19 @@ export function unsupportedNumbers(answer: string, context: string): string[] {
   const cleaned = answer
     .replace(/(?:^|\n|\s)(?:\d{1,2}[.)]|\(\d{1,2}\))\s+/g, " ");
 
-  const norm = (s: string) => (s.match(/\d+(?:[.,]\d+)*%?/g) ?? []).map((n) => n.replace(/,/g, ""));
+  const norm = (s: string) => {
+    const raw = (s.match(/\d+(?:[.,]\d+)*%?/g) ?? []).map((n) => n.replace(/,/g, ""));
+    const set = new Set<string>();
+    for (const n of raw) {
+      set.add(n);
+      if (n.endsWith("%")) set.add(n.slice(0, -1));
+    }
+    return Array.from(set);
+  };
   const ctx = new Set(norm(context));
   return [...new Set(norm(cleaned))].filter((n) => {
     if (ctx.has(n)) return false;
+    if (n.endsWith("%") && ctx.has(n.slice(0, -1))) return false;
     if (/^[1-5]$/.test(n)) return false;
     return true;
   });

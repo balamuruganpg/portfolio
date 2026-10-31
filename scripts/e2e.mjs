@@ -35,7 +35,7 @@ ok(
 );
 
 // --- filters
-const expected = { All: 15, Agents: 2, "Computer Vision": 2, Dashboards: 2, "Deep Learning": 5, Clustering: 3, EDA: 1, Web: 2 };
+const expected = { All: 17, Agents: 2, "Computer Vision": 2, Dashboards: 2, "Deep Learning": 5, Clustering: 3, EDA: 1, Web: 2 };
 for (const [f, n] of Object.entries(expected)) {
   await page.click(`[data-filter="${f}"]`);
   const count = await page.locator("[data-project]").count();
@@ -63,11 +63,12 @@ async function clickExternal(locator, label, expectHost) {
 }
 
 const feat = page.locator("#featured ~ div article");
-const featuredRepos = ["verascan", "bull-bear-autopilot", "LungScan-AI-Chest-Xray-Detection", "ai-leetcode-agent"];
+const featuredRepos = ["verascan", "CertiRoute", "bull-bear-autopilot", "LungScan-AI-Chest-Xray-Detection", "ai-leetcode-agent"];
 for (const r of featuredRepos) {
   await clickExternal(page.locator(`article a[data-kind="repo"][href$="/${r}"]`).first(), `repo ${r}`, `github.com/balamuruganpg/${r}`);
 }
 await clickExternal(page.locator('article a[data-kind="repo"][href*="axiom-sim2real/RAI-Axiom"]').first(), "repo RAI-Axiom", "github.com/axiom-sim2real/RAI-Axiom");
+await clickExternal(page.locator('a[data-kind="repo"][href$="/cloud-sla-monitoring-system-ccv-mini-project"]').first(), "repo Signal", "github.com/balamuruganpg/cloud-sla-monitoring-system-ccv-mini-project");
 await clickExternal(page.locator('a[data-kind="live"][href="https://medrag.in"]').first(), "live LungScan (medrag.in)", "medrag.in");
 await clickExternal(page.locator('a[data-kind="live"][href^="https://pneumonia-scan.streamlit.app"]').first(), "live PneumoScan (Streamlit)", "streamlit.app");
 await clickExternal(page.locator('a[data-kind="pypi"]').first(), "PyPI verascan", "pypi.org/project/verascan");
@@ -140,6 +141,25 @@ await askAssistant("What is VeraScan?");
 await page.locator('[data-testid="assistant-answer"]').last().locator('[data-citation="VeraScan"]').click();
 await page.waitForTimeout(900);
 ok("citation chip jumps to VeraScan card", ((await page.locator("#p-verascan").getAttribute("class")) || "").includes("flash"));
+
+// CertiRoute assistant test
+const certi = await askAssistant("What is CertiRoute?");
+console.log("\n--- Assistant answer: What is CertiRoute? ---\n" + certi.text + "\n---\n");
+ok("CertiRoute answer cites CertiRoute", certi.cites.includes("CertiRoute"), `citations: ${certi.cites.join(", ")}`);
+ok("CertiRoute mentions gateway or conformal risk control", /gateway|conformal/i.test(certi.text), certi.text);
+ok("CertiRoute does not turn live miss into a win", /miss|12\.12%|15\.96%/i.test(certi.text), certi.text);
+
+// Signal assistant test
+const sig = await askAssistant("What is Signal?");
+console.log("\n--- Assistant answer: What is Signal? ---\n" + sig.text + "\n---\n");
+ok("Signal answer cites Signal", sig.cites.includes("Signal"), `citations: ${sig.cites.join(", ")}`);
+ok("Signal mentions SLA or U23CS702 or Streamlit", /sla|u23cs702|streamlit/i.test(sig.text), sig.text);
+ok("Signal does not invent a live URL", !/https?:\/\/(?!github\.com)/i.test(sig.text));
+
+// citation chip jumps to CertiRoute and Signal
+await page.locator('[data-testid="assistant-answer"]').last().locator('[data-citation="Signal"]').click();
+await page.waitForTimeout(900);
+ok("citation chip jumps to Signal card", ((await page.locator("#p-signal").getAttribute("class")) || "").includes("flash"));
 
 await page.screenshot({ path: "scripts/e2e-final.png" });
 ok("no console errors", consoleErrors.length === 0, consoleErrors.slice(0, 3).join(" | "));

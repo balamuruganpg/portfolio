@@ -24,7 +24,7 @@ import {
   skills,
 } from "@/data/site";
 
-const CASE_ORDER = ["rai-axiom", "verascan", "bull-bear-autopilot", "lungscan-ai", "ai-leetcode-agent"];
+const CASE_ORDER = ["rai-axiom", "verascan", "certiroute", "bull-bear-autopilot", "lungscan-ai", "ai-leetcode-agent"];
 const caseRows = CASE_ORDER.map((s) => projects.find((p) => p.slug === s)!).filter((p) => p?.caseStudy);
 
 const MARQUEE_TECH = [
@@ -121,6 +121,12 @@ export default function Home() {
                             <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 font-mono text-[10px] font-medium text-amber-400">
                               <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
                               Ongoing
+                            </span>
+                          )}
+                          {p.status === "research prototype" && (
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5 font-mono text-[10px] font-medium text-indigo-400">
+                              <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
+                              research prototype
                             </span>
                           )}
                         </div>

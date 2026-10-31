@@ -44,11 +44,14 @@ function projectDoc(p: Project): Doc {
     : "";
   const availability = p.status === "Ongoing"
     ? "Status: ongoing research project (not shipped, no live demo). Source code on GitHub."
-    : p.live
-      ? "Status: live, deployed and usable online."
-      : p.pypi
-        ? "Status: published and installable from PyPI."
-        : "Status: source code on GitHub (no live deployment listed).";
+    : p.status === "research prototype"
+      ? "Status: research prototype (no live demo). Source code on GitHub."
+      : p.live
+        ? "Status: live, deployed and usable online."
+        : p.pypi
+          ? "Status: published and installable from PyPI."
+          : "Status: source code on GitHub (no live deployment listed).";
+  const tagLine = p.tag ? `Tag: ${p.tag}.` : "";
   const authorLine = p.authors ? `Authors: ${p.authors}.` : "";
   const orgLine = p.org ? `Organization: ${p.org}.` : "";
   return {
@@ -59,6 +62,7 @@ function projectDoc(p: Project): Doc {
       `Project: ${p.name}${p.featured ? " (featured)" : ""}.`,
       authorLine,
       orgLine,
+      tagLine,
       p.summary,
       cs,
       `Stack: ${p.stack.join(", ")}.`,

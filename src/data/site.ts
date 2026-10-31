@@ -37,7 +37,8 @@ export interface Project {
   name: string;
   repo: string;
   org?: string;
-  status?: "Ongoing" | "Shipped";
+  status?: "Ongoing" | "Shipped" | "research prototype" | string;
+  tag?: string;
   authors?: string;
   live?: string;
   pypi?: string;
@@ -226,6 +227,45 @@ export const projects: Project[] = [
     },
   },
   {
+    slug: "certiroute",
+    name: "CertiRoute",
+    repo: "https://github.com/balamuruganpg/CertiRoute",
+    status: "research prototype",
+    featured: true,
+    categories: [],
+    summary:
+      "OpenAI-compatible LLM gateway. A local logistic classifier scores the prompt, then conformal risk control chooses the cheap or strong model without embeddings or an extra model call for the decision. Offline frozen pairs on GSM8K, ARC-Challenge, and MBPP (3,188 pairs) achieved 32.77% estimated cost savings and 4.769% mean regret (length-shift replay regret falls from 20.215% to 4.799% after recalibration). Live Groq + xAI recorded 15.96% savings and 12.12% mean regret, missing the 5% target. Status: research prototype, GitHub only.",
+    stack: [
+      "FastAPI",
+      "conformal risk control",
+      "logistic router",
+      "offline eval",
+    ],
+    aliases: [
+      "certiroute",
+      "certi route",
+      "certi",
+      "llm gateway",
+      "conformal risk control",
+      "logistic router",
+      "model routing",
+      "routing",
+      "gsm8k",
+      "arc-challenge",
+      "mbpp",
+      "groq xai",
+    ],
+    caseStudy: {
+      problem:
+        "Route prompts between cheap and strong LLMs with statistical risk control, without embeddings or an extra model call for the routing decision.",
+      method:
+        "OpenAI-compatible gateway where a local logistic classifier scores the prompt and conformal risk control chooses the cheap or strong model. Evaluated offline on 3,188 frozen benchmark pairs (GSM8K, ARC-Challenge, MBPP) and live on Groq + xAI with length-shift recalibration.",
+      result: "32.77%",
+      resultLabel:
+        "offline savings (4.769% regret) · live Groq + xAI: 15.96% savings, 12.12% regret (missed 5% target)",
+    },
+  },
+  {
     slug: "bull-bear-autopilot",
     name: "Bull/Bear Autopilot",
     repo: gh("bull-bear-autopilot"),
@@ -306,6 +346,35 @@ export const projects: Project[] = [
       "Cancer analytics dashboard in Streamlit over 17,686 records, with statistical analysis plus Gradient Boosting regression and classification (GBR/GBC).",
     stack: ["Streamlit", "Statistics", "GBR", "GBC"],
     aliases: ["oncoinsight", "onco", "cancer", "oncology"],
+  },
+  {
+    slug: "signal",
+    name: "Signal",
+    repo: "https://github.com/balamuruganpg/cloud-sla-monitoring-system-ccv-mini-project",
+    tag: "Course",
+    featured: false,
+    categories: [],
+    summary:
+      "Streamlit Cloud SLA monitor for U23CS702 with seeded simulation and optional read-only Google Cloud Monitoring. Tracks four SLA metrics: uptime, latency, error rate, and availability across light and black themes. Course project; GitHub only, no live URL.",
+    stack: [
+      "Streamlit",
+      "Python",
+      "Google Cloud Monitoring",
+      "SLA Simulation",
+    ],
+    aliases: [
+      "signal",
+      "cloud sla",
+      "sla monitor",
+      "u23cs702",
+      "cloud-sla",
+      "cloud sla monitoring system",
+      "sla",
+      "uptime",
+      "latency",
+      "error rate",
+      "availability",
+    ],
   },
   {
     slug: "household-power-rnn",

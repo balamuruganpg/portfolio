@@ -111,6 +111,17 @@ export default function Projects() {
                       Ongoing
                     </span>
                   )}
+                  {p.status === "research prototype" && (
+                    <span className="flex items-center gap-1 rounded-full border border-indigo-500/40 bg-indigo-500/10 px-2 py-0.5 font-mono text-[10px] text-indigo-400">
+                      <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
+                      research prototype
+                    </span>
+                  )}
+                  {p.tag && (
+                    <span className="rounded-full border border-line bg-raised px-2 py-0.5 font-mono text-[10px] text-muted">
+                      {p.tag}
+                    </span>
+                  )}
                   {p.featured && (
                     <span className="rounded-full border border-line bg-raised px-2 py-0.5 font-mono text-[10px] text-muted">
                       featured

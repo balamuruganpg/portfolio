@@ -25,6 +25,24 @@
 - Description: Python package that detects train/eval data contamination across four detection tiers: exact match, 13-gram overlap, fuzzy match, and semantic similarity.
 - Purpose: Audits benchmark datasets to prevent data leakage from inflating model evaluations.
 
+## Research Prototype: CertiRoute
+- Project: CertiRoute
+- Repository: https://github.com/balamuruganpg/CertiRoute
+- Status: Research prototype (no live demo, GitHub only).
+- Description: OpenAI-compatible LLM gateway. A local logistic classifier scores the prompt, then conformal risk control chooses the cheap or strong model. No embeddings and no extra model call for the decision.
+- Stack: FastAPI, conformal risk control, logistic router, offline eval.
+- Offline Evaluation: Frozen pairs on GSM8K, ARC-Challenge, and MBPP (3,188 pairs, 32.77% estimated cost savings, 4.769% mean regret).
+- Length-shift replay: Regret falls from 20.215% to 4.799% after recalibration.
+- Live Groq + xAI: 15.96% recorded savings, 12.12% mean regret, missed the 5% target (kept explicitly as a miss).
+
+## Course Project: Signal
+- Project: Signal
+- Tag: Course
+- Repository: https://github.com/balamuruganpg/cloud-sla-monitoring-system-ccv-mini-project
+- Status: Source code on GitHub (no live URL).
+- Description: Streamlit Cloud SLA monitor for U23CS702. Seeded simulation, optional read-only Google Cloud Monitoring, four metrics: uptime, latency, error rate, availability. Light and black themes.
+- Stack: Streamlit, Python, Google Cloud Monitoring, SLA Simulation.
+
 ## Shipped Project: Bull/Bear Autopilot
 - Project: Bull/Bear Autopilot
 - Repository: https://github.com/balamuruganpg/bull-bear-autopilot
