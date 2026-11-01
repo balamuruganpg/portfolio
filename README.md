@@ -272,4 +272,20 @@ npm run test:guardrails:e2e  # adversarial API checks against a running server
 
 Chat requests never crawl visitor-supplied URLs. GitHub citations point to original file lines at a saved commit. Unmatched metrics and suspicious source sections are excluded; keys stay server-side and credential-shaped strings are redacted before snapshots are stored.
 
+### Certificate proof
+
+`src/data/credentials.ts` contains the document-backed credential catalogue. The owner-provided `Certificates/` folder is preserved; byte-identical public proof files are under `public/credentials/`. There are 45 unique completed credentials from 47 certificate documents (two duplicate PDF pairs), with 12 highlighted entries. The separate TXT file supplies the Masai verification link. Course and programme completion records are distinguished from Oracle certifications; IBM programme component courses retain their relationship to the parent programme.
+
+Deep Learning Specialization by Andrew Ng is owner-confirmed **in progress**, excluded from the completed count. AI For Everyone is a separate completed course. No Tableau certificate was supplied, so Tableau remains a skill rather than a claimed certificate.
+
+The assistant retrieves individual credential records with exact IDs and proof citations. Public educational credentials are distinguished from private authentication credentials. All 41 supplied/embedded verification URLs returned successful HTTP responses during the 2026-11-01 check; the four Oracle documents provide printed IDs and original PDFs instead. Link availability is not independent issuer attestation.
+
+```powershell
+npm run test:credentials      # Counts, deduplication, source/public SHA-256, IDs and URL destinations
+npm run test:credentials:e2e  # Running server: responsive cards, catalogue search and all proof files
+npm run test:credentials:api  # Running server + model: specific proof, study status and private-secret refusal
+```
+
+To update the catalogue, inspect the original document and its embedded links, retain its SHA-256 and source paths, add one canonical record per unique credential, and copy its original bytes to its public proof path. Never manufacture a verification URL or treat an in-progress course as completed. Only the expanded catalogue mounts the full list; certificate assets are loaded when opened.
+
 LinkedIn blocks public retrieval for the exact profile (HTTP 999). The assistant discloses that gap. The owner can supply profile text using the format in `content/rag/imports/README.md`.

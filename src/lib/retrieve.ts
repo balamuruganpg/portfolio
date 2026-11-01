@@ -68,6 +68,8 @@ export function retrieve(query: string, corpus: Doc[], k = 6): Retrieval {
   }
   if (OFF_TOPIC.test(q)) return { docs: [], scores: [], aliasHit: named.length > 0, offTopic: true };
   if (named.length) return { docs: named.slice(0, k), scores: named.map(() => 30).slice(0, k), aliasHit: true, offTopic: false };
+  const credentials = corpus.filter(d => d.credential && d.aliases.some(a => new RegExp(`(^|[^a-z0-9])${a.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}([^a-z0-9]|$)`).test(q)));
+  if (credentials.length) return { docs: credentials.slice(0, k), scores: credentials.slice(0, k).map(() => 30), aliasHit: true, offTopic: false };
   if (/\b(live|deployed|demos?|online|try)\b/.test(q) && /\b(projects?|apps?|which|what)\b/.test(q) && !/\b(not|aren.t|no)\b/.test(q)) {
     const docs = corpus.filter(d => d.project?.live).slice(0, k);
     return { docs, scores: docs.map(() => 30), aliasHit: false, offTopic: false };

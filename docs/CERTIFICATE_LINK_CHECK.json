@@ -1,0 +1,252 @@
+{
+  "checkedOn": "2026-11-01",
+  "scope": "HTTP availability only; not independent issuer attestation. Original URLs were transcribed from document annotations, text, QR codes or owner-supplied verification TXT.",
+  "results": [
+    {
+      "title": "IBM Data Science",
+      "url": "https://coursera.org/verify/professional-cert/47733K92TZFX",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/professional-cert/47733K92TZFX"
+    },
+    {
+      "title": "Generative AI Leader",
+      "url": "https://coursera.org/verify/professional-cert/1VW710KIADU0",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/professional-cert/1VW710KIADU0"
+    },
+    {
+      "title": "Google AI Essentials",
+      "url": "https://coursera.org/verify/3KETLTCFYQXL",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/3KETLTCFYQXL"
+    },
+    {
+      "title": "Responsible & Safe AI Systems",
+      "url": "https://nptel.ac.in/noc/E_Certificate/NPTEL25CS118S65430198010406637",
+      "status": 200,
+      "finalUrl": "https://nptel.ac.in/noc/E_Certificate/NPTEL25CS118S65430198010406637"
+    },
+    {
+      "title": "Introduction To Internet Of Things",
+      "url": "https://nptel.ac.in/noc/E_Certificate/NPTEL25CS44S34360256904351583",
+      "status": 200,
+      "finalUrl": "https://nptel.ac.in/noc/E_Certificate/NPTEL25CS44S34360256904351583"
+    },
+    {
+      "title": "Certificate Program in Entrepreneurship and Startup Mastery",
+      "url": "https://verify.masaischool.com/certificate/QXhMJD5pu4",
+      "status": 200,
+      "finalUrl": "https://verify.masaischool.com/certificate/QXhMJD5pu4"
+    },
+    {
+      "title": "Entrepreneurship Development",
+      "url": "https://digitalskills.iitmpravartak.org.in/iitprogram/pages/certificate/DSA102087_429.pdf",
+      "status": 200,
+      "finalUrl": "https://digitalskills.iitmpravartak.org.in/verify/cert/DSA102087_429"
+    },
+    {
+      "title": "Machine Learning with Python",
+      "url": "https://coursera.org/verify/DJK8QTWJJAF6",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/DJK8QTWJJAF6"
+    },
+    {
+      "title": "Applied Data Science Capstone",
+      "url": "https://coursera.org/verify/T1T0PRANHXEW",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/T1T0PRANHXEW"
+    },
+    {
+      "title": "AI For Everyone",
+      "url": "https://coursera.org/verify/B3LCXLM8BO7G",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/B3LCXLM8BO7G"
+    },
+    {
+      "title": "Automate Cybersecurity Tasks with Python",
+      "url": "https://coursera.org/verify/5BSS9EVGUE49",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/5BSS9EVGUE49"
+    },
+    {
+      "title": "Business Analysis & Process Management",
+      "url": "https://coursera.org/verify/FLL0L238D321",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/FLL0L238D321"
+    },
+    {
+      "title": "Cloud Computing Basics (Cloud 101)",
+      "url": "https://coursera.org/verify/8IKHBJIBHC9W",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/8IKHBJIBHC9W"
+    },
+    {
+      "title": "Data Science Methodology",
+      "url": "https://coursera.org/verify/TWU6NV56E0K1",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/TWU6NV56E0K1"
+    },
+    {
+      "title": "Data Analysis with Python",
+      "url": "https://coursera.org/verify/6WV2AOROBL56",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/6WV2AOROBL56"
+    },
+    {
+      "title": "Data Scientist Career Guide and Interview Preparation",
+      "url": "https://coursera.org/verify/2AL170OJORU6",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/2AL170OJORU6"
+    },
+    {
+      "title": "Data Visualization with Python",
+      "url": "https://coursera.org/verify/RNJEMZ7H6KEV",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/RNJEMZ7H6KEV"
+    },
+    {
+      "title": "Databases and SQL for Data Science with Python",
+      "url": "https://coursera.org/verify/DI09V9IGC8Z4",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/DI09V9IGC8Z4"
+    },
+    {
+      "title": "Essentials of Entrepreneurship: Thinking & Action",
+      "url": "https://coursera.org/verify/KW4I8RP6QSBN",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/KW4I8RP6QSBN"
+    },
+    {
+      "title": "Foundations of Cybersecurity",
+      "url": "https://coursera.org/verify/TKDBFVC4T6O3",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/TKDBFVC4T6O3"
+    },
+    {
+      "title": "Generative AI: Elevate Your Data Science Career",
+      "url": "https://coursera.org/verify/A0LSZD8A786A",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/A0LSZD8A786A"
+    },
+    {
+      "title": "Generative AI: Introduction and Applications",
+      "url": "https://coursera.org/verify/UNM70MD9IRMS",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/UNM70MD9IRMS"
+    },
+    {
+      "title": "Introduction to Artificial Intelligence (AI)",
+      "url": "https://coursera.org/verify/E7GBJKRMCWQK",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/E7GBJKRMCWQK"
+    },
+    {
+      "title": "Introduction to Android Mobile Application Development",
+      "url": "https://coursera.org/verify/P0NYWSLIVFBV",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/P0NYWSLIVFBV"
+    },
+    {
+      "title": "Introduction to Back-End Development",
+      "url": "https://coursera.org/verify/FHCSSHB2SO8H",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/FHCSSHB2SO8H"
+    },
+    {
+      "title": "Introduction to Blockchain Technologies",
+      "url": "https://coursera.org/verify/67BU60QGIF59",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/67BU60QGIF59"
+    },
+    {
+      "title": "Introduction to Cloud Computing",
+      "url": "https://coursera.org/verify/JYEY616ARPRK",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/JYEY616ARPRK"
+    },
+    {
+      "title": "Introduction to Data Analytics",
+      "url": "https://coursera.org/verify/WRVV9PQP0RCW",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/WRVV9PQP0RCW"
+    },
+    {
+      "title": "Introduction to Front-End Development",
+      "url": "https://coursera.org/verify/U1PCBCFUG9HI",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/U1PCBCFUG9HI"
+    },
+    {
+      "title": "Machine Learning Introduction for Everyone",
+      "url": "https://coursera.org/verify/32M793R0R8OB",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/32M793R0R8OB"
+    },
+    {
+      "title": "Linux Fundamentals",
+      "url": "https://coursera.org/verify/GDUMMK0I5QEO",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/GDUMMK0I5QEO"
+    },
+    {
+      "title": "Positive Psychology",
+      "url": "https://coursera.org/verify/25AX4UK6E9TR",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/25AX4UK6E9TR"
+    },
+    {
+      "title": "Principles and Technologies of 5G Mobile Networks",
+      "url": "https://coursera.org/verify/RHW0HI7SBRS5",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/RHW0HI7SBRS5"
+    },
+    {
+      "title": "Python for Data Science, AI & Development",
+      "url": "https://coursera.org/verify/MG3MWRP90D8A",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/MG3MWRP90D8A"
+    },
+    {
+      "title": "Python Project for Data Science",
+      "url": "https://coursera.org/verify/HSH5N02H087L",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/HSH5N02H087L"
+    },
+    {
+      "title": "Power BI & Power Virtual Agents",
+      "url": "https://coursera.org/verify/6B6NKUNZNIZZ",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/6B6NKUNZNIZZ"
+    },
+    {
+      "title": "The Science of Well-Being",
+      "url": "https://coursera.org/verify/6G3VMC7YC0NN",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/6G3VMC7YC0NN"
+    },
+    {
+      "title": "The entrepreneur's guide for beginners",
+      "url": "https://coursera.org/verify/E8SKI2Q5ZEFE",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/E8SKI2Q5ZEFE"
+    },
+    {
+      "title": "What is Data Science?",
+      "url": "https://coursera.org/verify/X9J87EXBE7GC",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/X9J87EXBE7GC"
+    },
+    {
+      "title": "Tools for Data Science",
+      "url": "https://coursera.org/verify/58AUU0S8EMJO",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/58AUU0S8EMJO"
+    },
+    {
+      "title": "Work Smarter with Microsoft Excel",
+      "url": "https://coursera.org/verify/DLOAAMJ2HKUS",
+      "status": 200,
+      "finalUrl": "https://www.coursera.org/account/accomplishments/verify/DLOAAMJ2HKUS"
+    }
+  ]
+}

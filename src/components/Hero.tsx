@@ -11,7 +11,7 @@ const proof = [
   { value: "First Rank in CSE, NIT", detail: "2025–2026", href: "#experience" },
   { value: "VeraScan", detail: "Published on PyPI", href: "#case-verascan" },
   { value: "568 tests", detail: "Bull/Bear Autopilot", href: "#case-bull-bear-autopilot" },
-  { value: `${certifications.length} certifications`, detail: "Verified credentials", href: "#certs" },
+  { value: `${certifications.length} credentials`, detail: "Certificates & course proof", href: "#certs" },
 ];
 const examples = ["verascan", "bull-bear-autopilot", "certiroute"].map(slug => projects.find(p => p.slug === slug)!);
 

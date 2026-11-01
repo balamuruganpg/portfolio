@@ -39,7 +39,11 @@ export interface EvidenceIndex {
 const INJECTION = /ignore\s+(?:(?:all|any|the|previous|earlier|above)\s+)*(?:instructions|rules|system)|(?:reveal|print|expose|show|output)\b.{0,45}\b(?:system prompt|api.?key|credentials|secrets?|\.env)|\b(?:gsk_|sk-or-|AIza)[a-z0-9_-]{12,}|REDACTED_CREDENTIAL|\[INST\]|<\|(?:system|im_start)\|>/i;
 export function isBlockedQuestion(question: string): boolean {
   const text = question.normalize("NFKC").replace(/[\u200b-\u200f\u202a-\u202e\u2060-\u206f]/g, "");
-  return INJECTION.test(text) || /\b(?:fetch|browse|open|visit|request|curl)\b.{0,45}https?:\/\//i.test(text) || /\b(?:process\.env|GROQ_API_KEY|GEMINI_API_KEY|OPENROUTER_API_KEY)\b/i.test(text);
+  // In this portfolio, unqualified credentials means educational proof. Keep
+  // the stricter source-text quarantine unchanged and protect private access.
+  const privateContext = /\b(?:private|hidden|secret|server|system|api|access|login|auth|authentication|authorization|passwords?|tokens?|keys?|database|environment|configuration)\b|\.env|process\.env/i.test(text);
+  const policyText = privateContext ? text : text.replace(/\bcredentials\b/gi, "certificates");
+  return INJECTION.test(policyText) || /\b(?:fetch|browse|open|visit|request|curl)\b.{0,45}https?:\/\//i.test(text) || /\b(?:process\.env|GROQ_API_KEY|GEMINI_API_KEY|OPENROUTER_API_KEY)\b/i.test(text);
 }
 
 function cleanMarkdown(text: string): string {

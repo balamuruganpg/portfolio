@@ -8,6 +8,7 @@ import BackgroundMotion from "@/components/BackgroundMotion";
 import About from "@/components/About";
 import Hero from "@/components/Hero";
 import Nav from "@/components/Nav";
+import Certifications from "@/components/Certifications";
 import Projects from "@/components/Projects";
 import SkillsSection from "@/components/SkillsSection";
 import { Arrow, AskButton, Ext } from "@/components/ui";
@@ -340,31 +341,14 @@ export default function Home() {
           </section>
 
           {/* SECTION 05: CERTIFICATIONS */}
-          <section className="pb-12 md:pb-20">
+          <section id="credential-section" className="pb-12 md:pb-20">
             <SectionHead
               id="certs"
               index="05"
-              title={`Certifications (${certifications.length})`}
-              sub="Verified industry and professional credentials in data science, generative AI, and machine learning."
+              title={`Certifications & learning (${certifications.length})`}
+              sub="Professional certifications, programmes and course completions, backed by original documents and verification details."
             />
-
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {certifications.map((c, idx) => (
-                <Reveal key={c} delay={Math.min(idx * 0.02, 0.15)} y={12}>
-                  <div
-                    onMouseMove={onSpot}
-                    className="spot group flex h-full items-start justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-3.5 transition-colors hover:border-accent/40"
-                  >
-                    <span className="text-sm leading-relaxed font-medium text-ink/90 group-hover:text-accent transition-colors">
-                      {c}
-                    </span>
-                    <span className="shrink-0 font-mono text-[10px] text-accent/60">
-                      ✓
-                    </span>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
+            <Certifications />
           </section>
 
           {/* SECTION 06: HOW THE ASSISTANT WORKS */}

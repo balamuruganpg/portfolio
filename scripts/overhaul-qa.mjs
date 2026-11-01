@@ -11,7 +11,7 @@ for (const colorScheme of ['light','dark']) {
     const overflow=await page.evaluate(()=>[...document.querySelectorAll('body *')].filter(e=>{ const r=e.getBoundingClientRect();return !e.closest('[aria-hidden="true"]') && r.width>0 && (r.right>innerWidth+2 || r.left < -2) && getComputedStyle(e).position !== 'fixed';}).map(e=>({tag:e.tagName,cls:e.className})).slice(0,10));
     check('identity and About',await page.locator('#hero-title').innerText()==='Balamurugan P G' && await page.locator('#about dd').count()===6);
     check('required hero line',await page.locator('#top').innerText().then(t=>t.includes('I build AI systems with verified results - and I publish the misses too')));
-    check('certification count',await page.locator('#certs + div > div').count()===12);
+    check('highlighted credential count',await page.locator('[data-featured-credential]').count()===12);
     check('section headings and evidence remain opaque with reduced motion',await page.locator('h2, article').evaluateAll(es=>es.every(e=>{for(let n=e;n;n=n.parentElement){if(getComputedStyle(n).opacity==='0')return false;}return true;})));
     const h1=await page.locator('h1').allTextContents();
     const anchors=await page.evaluate(()=>[...document.querySelectorAll('a[href^="#"]')].filter(a=>!document.getElementById(a.hash.slice(1))).map(a=>a.hash));

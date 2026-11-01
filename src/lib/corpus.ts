@@ -1,6 +1,7 @@
 import {
   achievements,
-  certifications,
+  completedCredentials,
+  inProgressCredentials,
   education,
   experience,
   profile,
@@ -34,6 +35,7 @@ export interface Doc {
   href: string;
   project?: Project;
   projectSlug?: string;
+  credential?: { status: "completed" | "in-progress"; credentialId?: string };
   provenance?: {
     sourceId: string;
     kind: string;
@@ -154,11 +156,28 @@ export function buildSiteDocs(): Doc[] {
     id: "certs",
     section: "certs",
     title: "Certifications",
-    text: `Certifications (${certifications.length}): ${certifications.join("; ")}.`,
-    summary: certifications.join(" · "),
-    aliases: ["certification", "certifications", "certificate", "certified", "oracle", "oci", "ibm", "nptel", "google", "andrew ng", "coursera"],
+    text: `${completedCredentials.length} unique completed credentials with original document proof: ${completedCredentials.filter(c => c.kind === "Certification").length} Oracle certifications (three Professional-level and one Associate-level), ${completedCredentials.filter(c => c.kind === "Professional certificate").length} Professional Certificates (IBM Data Science and the Google Cloud Generative AI Leader Coursera programme), plus course completions, guided projects, a programme completion and training. IBM's component courses have separate IDs and are labelled as parts of the same programme. Duplicate PDF copies are counted once. Highlighted credentials: ${completedCredentials.filter(c => c.featured).map(c => `${c.title} (${c.issuer}; ${c.kind})`).join("; ")}. Deep Learning Specialization by DeepLearning.AI / Andrew Ng is in progress, not completed, and excluded from the completed count. AI For Everyone is a separate completed course, not the Deep Learning Specialization. A Tableau certificate is not documented in the supplied folder; Tableau remains a listed skill. Exact credential IDs and proof links are in the individual credential source documents.`,
+    summary: `${completedCredentials.length} unique completed credentials with document proof, including ${completedCredentials.filter(c => c.kind === "Certification").length} Oracle certifications and ${completedCredentials.filter(c => c.kind === "Professional certificate").length} Coursera Professional Certificates. Course completions and programme components are labelled separately. Deep Learning Specialization is in progress and excluded from this count.`,
+    aliases: ["certification", "certifications", "certificate", "credentials", "credential", "certified", "oracle", "oci", "ibm", "nptel", "google", "andrew ng", "coursera", "tableau certificate", "tableau certification"],
     href: "#certs",
   });
+
+  const credentialAliases: Record<string, string[]> = {
+    "oci-data-science-2025": ["oracle data science", "oci data science"],
+    "oci-generative-ai-2025": ["oracle generative ai", "oci generative ai"],
+    "oci-ai-foundations-2025": ["oracle ai foundations", "oci ai foundations"],
+    "oracle-ai-vector-search": ["oracle vector search", "oracle ai vector search"],
+    "ibm-data-science": ["ibm data science"],
+    "entrepreneurship-startup-mastery": ["iim mumbai certificate", "startup mastery"],
+  };
+  for (const c of completedCredentials) {
+    const text = `${c.title}. Issuer: ${c.issuer}${c.platform ? `; platform: ${c.platform}` : ""}. Credential type: ${c.kind}. Status: completed. Date: ${c.dateLabel}.${c.expiresOn ? ` Valid until: ${c.expiresOn}.` : ""}${c.credentialId ? ` ${c.idLabel ?? "Credential ID"}: ${c.credentialId}.` : ""}${c.parentId ? " Component course of the IBM Data Science Professional Certificate; not a separate professional certification." : ""}${c.note ? ` ${c.note}` : ""} Original certificate: ${c.file}${c.verificationUrl ? ` Verification URL: ${c.verificationUrl}` : " No issuer verification URL was embedded; use the printed ID and original certificate."}`;
+    docs.push({ id: `credential:${c.id}`, section: "certs", title: c.title, text, summary: text, aliases: [c.title.toLowerCase(), ...(credentialAliases[c.id] ?? []), ...(c.credentialId ? [c.credentialId.toLowerCase()] : [])], href: c.verificationUrl ?? c.file, credential: { status: "completed", credentialId: c.credentialId } });
+  }
+  for (const c of inProgressCredentials) {
+    const text = `${c.title} by ${c.issuer}: in progress, not completed. ${c.note} Owner-confirmed current study; no completion certificate or verification ID is available. It is excluded from the ${completedCredentials.length} completed credential count.`;
+    docs.push({ id: `learning:${c.id}`, section: "certs", title: `${c.title} · In progress`, text, summary: text, aliases: [c.title.toLowerCase(), "deep learning certificate", "andrew ng specialization"], href: `#learning-${c.id}`, credential: { status: "in-progress" } });
+  }
 
   docs.push({
     id: "skills",

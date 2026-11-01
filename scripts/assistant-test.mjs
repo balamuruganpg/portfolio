@@ -7,7 +7,7 @@ import { pathToFileURL } from "node:url";
 import ts from "typescript";
 
 const folder = await fs.mkdtemp(path.join(os.tmpdir(), "portfolio-agent-test-"));
-const modules = { site: "src/data/site.ts", corpus: "src/lib/corpus.ts", retrieve: "src/lib/retrieve.ts", agent: "src/lib/agent.ts", providers: "src/lib/providers.ts", answer: "src/lib/answer.ts" };
+const modules = { credentials: "src/data/credentials.ts", site: "src/data/site.ts", corpus: "src/lib/corpus.ts", retrieve: "src/lib/retrieve.ts", agent: "src/lib/agent.ts", providers: "src/lib/providers.ts", answer: "src/lib/answer.ts" };
 let failures = 0;
 async function check(name, test) {
   try { await test(); console.log(`PASS ${name}`); }
@@ -20,7 +20,7 @@ try {
     catch { console.error(`FAIL missing module ${file}`); process.exitCode = 1; break; }
     const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText
       .replaceAll('"@/data/site"', '"./site.mjs"')
-      .replace(/"\.\/(corpus|retrieve|agent|providers|answer)"/g, '"./$1.mjs"');
+      .replace(/"\.\/(credentials|corpus|retrieve|agent|providers|answer)"/g, '"./$1.mjs"');
     await fs.writeFile(path.join(folder, `${name}.mjs`), output);
   }
   if (!process.exitCode) {
@@ -30,6 +30,14 @@ try {
     const { generateAnswer } = await import(pathToFileURL(path.join(folder, "providers.mjs")));
     const { generateGroundedReply } = await import(pathToFileURL(path.join(folder, "answer.mjs")));
     const docs = buildSiteDocs();
+    await check("Oracle proof query retrieves its exact credential and ID",()=>{const r=retrieve("Verify the Oracle Data Science certificate",docs);assert.equal(r.docs[0]?.id,"credential:oci-data-science-2025");assert.match(r.docs[0].text,/102569553OCI25DSOCP/);assert.match(r.docs[0].text,/\/credentials\/oci-data-science-2025.pdf/);});
+    await check("Deep Learning Specialization is explicitly in progress",()=>{const r=retrieve("Has he completed the Deep Learning Specialization?",docs);assert.equal(r.docs[0]?.id,"learning:deep-learning-specialization");assert.match(r.docs[0].text,/in progress|not completed/i);assert.ok(!/Credential ID:/.test(r.docs[0].text));});
+    await check("credential count distinguishes course completions and professional certifications",()=>{const d=docs.find(d=>d.id==="certs");assert.match(d.text,/45/);assert.match(d.text,/4 Oracle certifications/i);assert.match(d.text,/course completions/i);assert.match(d.text,/Tableau.*not documented/i);});
+    await check("IBM credential citation goes to the supplied verification page",()=>{const d=docs.find(d=>d.id==="credential:ibm-data-science");assert.equal(d?.href,"https://coursera.org/verify/professional-cert/47733K92TZFX");});
+    await check("Google leader programme stays distinct from its certification exam",()=>{const d=docs.find(d=>d.id==="credential:generative-ai-leader");assert.match(d?.text??"",/not a Google Cloud certification exam/i);});
+    await check("credential IDs cannot change letters while reusing the same digits",()=>{const d={id:"credential:fixture",section:"certs",title:"Fixture",text:"Credential ID: ABC123. Course completion.",href:"#certs",summary:"",aliases:[],credential:{status:"completed",credentialId:"ABC123"}};assert.equal(validateGroundedAnswer("Credential ID: XYZ123. [1]",[d]).valid,false);});
+    await check("in-progress credential cannot become an earned certificate",()=>{const d={id:"learning:fixture",section:"certs",title:"Deep Learning Specialization",text:"Deep Learning Specialization. In progress; not completed.",href:"#certs",summary:"",aliases:[],credential:{status:"in-progress"}};assert.equal(validateGroundedAnswer("He has completed the Deep Learning Specialization. [1]",[d]).valid,false);assert.equal(validateGroundedAnswer("Deep Learning Specialization is in progress, not completed. [1]",[d]).valid,true);});
+    await check("mixed completed and pending citations preserve each credential status",()=>{const selected=[docs.find(d=>d.id==="credential:ai-for-everyone"),docs.find(d=>d.id==="learning:deep-learning-specialization")];assert.equal(validateGroundedAnswer("He has completed Deep Learning Specialization and AI For Everyone. [1][2]",selected).valid,false);assert.equal(validateGroundedAnswer("He has completed both. [1][2]",selected).valid,false);assert.equal(validateGroundedAnswer("AI For Everyone is completed and Deep Learning Specialization is in progress. [1][2]",selected).valid,true);assert.equal(validateGroundedAnswer("Deep Learning Specialization is completed but AI For Everyone is in progress. [1][2]",selected).valid,false);});
     await check("more-details request has an explicit expansion prompt",()=>{assert.match(answerInstructions("I said more details"),/new|not repeat/i);assert.match(answerInstructions("I said more details"),/paragraph|bullet/i);});
     await check("small unsupported numbers are rejected", () => assert.deepEqual(unsupportedNumbers("It has 3 checks.", "It has 4 checks."), ["3"]));
     await check("Unicode spaced percentages are normalized", () => assert.deepEqual(unsupportedNumbers("Savings were 32.77\u202f%.", "Savings 32.77%."), []));

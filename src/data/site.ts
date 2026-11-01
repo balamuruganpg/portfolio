@@ -4,6 +4,9 @@
  * Only facts written here (plus content/resume.md) can ever appear in an assistant answer.
  */
 
+import { completedCredentials } from "./credentials";
+export { completedCredentials, inProgressCredentials } from "./credentials";
+
 export type Category =
   | "Agents"
   | "Computer Vision"
@@ -108,20 +111,8 @@ export const experience = [
   },
 ];
 
-export const certifications = [
-  "OCI Data Science Professional (Oracle)",
-  "OCI Generative AI Professional (Oracle)",
-  "OCI AI Foundations (Oracle)",
-  "Oracle AI Vector Search (Oracle)",
-  "IBM Data Science (IBM)",
-  "Deep Learning (Andrew Ng)",
-  "Machine Learning with Python",
-  "Google AI Essentials (Google)",
-  "Generative AI Leader",
-  "Linux Fundamentals",
-  "Tableau",
-  "NPTEL IoT (NPTEL)",
-];
+// Completed credentials only; professional certifications and courses stay distinct.
+export const certifications = completedCredentials.map(c => c.title);
 
 export const skills: { group: string; items: string[] }[] = [
   {

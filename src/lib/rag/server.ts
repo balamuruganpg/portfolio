@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { profile, projects } from "@/data/site";
+import { completedCredentials, profile, projects } from "@/data/site";
 import type { EvidenceIndex } from "./core";
 
 type Loaded = EvidenceIndex & { state: "ready" | "missing" | "invalid" };
@@ -44,6 +44,7 @@ export function knowledgeStatus(data: Loaded) {
     state: data.state,
     retrieval: "BM25",
     sourceCount: sources.length,
+    credentialCount: completedCredentials.length,
     repositoryCount: new Set(sources.filter(s => s.kind === "github").map(s => s.projectSlug)).size,
     chunkCount: data.chunks.length,
     updatedAt: data.generatedAt || null,
