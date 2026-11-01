@@ -297,11 +297,6 @@ html[data-theme="light"] .spot::after {
   animation-play-state: paused !important;
 }
 
-/* Native scrolling gets priority over decoration, including inside the agent. */
-[data-scrolling="true"] :is(.ambient-orb, .hero-ambient, .orbit-path, .marquee-track) { animation-play-state: paused; }
-[data-scrolling="true"] .grain { visibility: hidden; }
-[data-scrolling="true"] .nav-shell { backdrop-filter: none; }
-
 @media (hover: none) {
   .spot::before,
   .spot::after {

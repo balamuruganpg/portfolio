@@ -24,28 +24,17 @@ export default function Nav() {
 
   useEffect(() => {
     let frame = 0;
-    let measureFrame = 0;
-    let positions: { id: string; top: number }[] = [];
     const update = () => {
       frame = 0;
       setScrolled(window.scrollY > 24);
-      const current = positions.filter(e => e.top <= window.scrollY + 180).at(-1);
+      const sections = MENU.map(([, id]) => document.getElementById(id)).filter((e): e is HTMLElement => !!e);
+      sections.sort((a, b) => a.offsetTop - b.offsetTop);
+      const current = sections.filter(e => e.getBoundingClientRect().top <= 180).at(-1);
       setActive(current?.id ?? "");
     };
-    const measure = () => {
-      measureFrame = 0;
-      positions = MENU.flatMap(([, id]) => {
-        const section = document.getElementById(id);
-        return section ? [{ id, top: section.getBoundingClientRect().top + window.scrollY }] : [];
-      }).sort((a, b) => a.top - b.top);
-      update();
-    };
-    const onResize = () => { if (!measureFrame) measureFrame = requestAnimationFrame(measure); };
     const onScroll = () => { if (!frame) frame = requestAnimationFrame(update); };
-    const observer = new ResizeObserver(onResize);
-    observer.observe(document.body);
-    measure(); window.addEventListener("scroll", onScroll, { passive: true }); window.addEventListener("resize", onResize);
-    return () => { cancelAnimationFrame(frame); cancelAnimationFrame(measureFrame); observer.disconnect(); window.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onResize); };
+    update(); window.addEventListener("scroll", onScroll, { passive: true }); window.addEventListener("resize", onScroll);
+    return () => { cancelAnimationFrame(frame); window.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onScroll); };
   }, []);
   useEffect(() => {
     if (!menuOpen) return;
