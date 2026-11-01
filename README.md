@@ -148,7 +148,9 @@ GEMINI_MODEL=gemini-3.8-flash
 
 Keys stay in `.env.local` (ignored by Git), or in your hosting environment. Do not use `NEXT_PUBLIC_` variables. Restart the server after changing keys. There is no public key-entry or key-saving endpoint.
 
-The assistant prefers Groq (`openai/gpt-oss-120b`, then `openai/gpt-oss-20b`) with a total provider budget of 12 seconds. Existing Gemini and OpenRouter configurations remain optional fallbacks. If generation is unavailable or fails source validation, the assistant returns the original portfolio facts with clickable citations.
+The assistant prefers Groq (`openai/gpt-oss-120b`, then `openai/gpt-oss-20b`). Each provider pass has a 12-second budget; generation and at most one source-validation rewrite share a 16-second deadline. Existing Gemini and OpenRouter configurations remain optional fallbacks. If generation is unavailable or fails source validation, the assistant returns source excerpts with clickable citations and labels the fallback honestly. Each generated reply displays the provider and model actually used.
+
+Requests for more detail retrieve diverse implementation sections, carrying the project forward from conversation history and preferring sections not already cited. Groq returns structured paragraphs with explicit source IDs; the server validates the claims and IDs before rendering citations. Run `npm run test:details` against a running server with a valid Groq configuration to reproduce the two-turn VeraScan detail regression using the live API.
 
 ### 4. Run the Development Server
 ```bash

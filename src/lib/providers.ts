@@ -18,6 +18,7 @@ export async function generateAnswer(
   keys = providerKeys(),
   signal?: AbortSignal,
   request: typeof fetch = fetch,
+  options: { schema?: Record<string, unknown> } = {},
 ): Promise<{ text: string; provider: string; model: string }> {
   const deadline = Date.now() + 12_000;
   const attempts: { provider: string; model: string; key: string; url: string; gemini?: boolean }[] = [];
@@ -43,17 +44,20 @@ export async function generateAnswer(
         body: JSON.stringify(attempt.gemini ? {
           systemInstruction: { parts: [{ text: system }] },
           contents: [...history.slice(-6).map(h => ({ role: h.role === "assistant" ? "model" : "user", parts: [{ text: h.text }] })), { role: "user", parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.1, maxOutputTokens: 1200 },
+          generationConfig: { temperature: 0.1, maxOutputTokens: 1600, ...(options.schema ? { responseMimeType: "application/json" } : {}) },
         } : {
           model: attempt.model,
           temperature: 0.1,
-          max_completion_tokens: 1200,
+          max_completion_tokens: options.schema ? 1600 : 1200,
           ...(attempt.provider === "Groq" && attempt.model.startsWith("openai/gpt-oss-") ? { reasoning_effort: "low" } : {}),
+          ...(options.schema && attempt.provider === "Groq" && attempt.model.startsWith("openai/gpt-oss-") ? { response_format: { type: "json_schema", json_schema: { name: "portfolio_answer", strict: true, schema: options.schema } } } : {}),
           messages: [{ role: "system", content: system }, ...history.slice(-6).map(h => ({ role: h.role, content: h.text })), { role: "user", content: prompt }],
         }),
       });
       if (!response.ok) {
-        if ([401, 403, 429].includes(response.status)) blockedProviders.add(attempt.provider);
+        // Quotas can be model-specific. A throttled primary may still use the
+        // configured secondary model; invalid credentials block the provider.
+        if ([401, 403].includes(response.status)) blockedProviders.add(attempt.provider);
         await response.body?.cancel();
         continue;
       }

@@ -50,7 +50,7 @@ try {
   await page.route('**/api/chat', async route => {
     if(route.request().method()==='GET') return route.fulfill({json:{hasKey:true,provider:'Groq'}});
     lastBody=route.request().postDataJSON();
-    await route.fulfill({json:{answer:'VeraScan is a Python package published on PyPI. [1]',citations:[{label:'VeraScan',href:'#p-verascan',section:'project',index:1}],mode:'llm',suggestions:['How does VeraScan work?']}});
+    await route.fulfill({json:{answer:'VeraScan is a Python package published on PyPI. [1]',citations:[{label:'VeraScan',href:'#p-verascan',section:'project',index:1}],mode:'llm',provider:'Groq',model:'openai/gpt-oss-120b',suggestions:['How does VeraScan work?']}});
   });
   await page.evaluate(()=>localStorage.setItem('portfolio_gemini_key','legacy-test-key'));
   await page.reload({waitUntil:'networkidle'});
@@ -59,6 +59,7 @@ try {
   assert.equal(await page.locator('input[type=password]').count(),0);
   await page.getByRole('button',{name:'What is VeraScan?',exact:true}).click();
   await page.getByTestId('assistant-answer').waitFor();
+  assert.match(await page.getByTestId('assistant-answer').innerText(),/Groq · openai\/gpt-oss-120b/);
   assert.ok(!('apiKey' in lastBody));
   assert.ok(!JSON.stringify(lastBody).includes('legacy-test-key'));
   await page.getByRole('link',{name:'Source 1: VeraScan'}).waitFor();

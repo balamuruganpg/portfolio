@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { buildSiteDocs } from "@/lib/corpus";
-import { ASSISTANT_SYSTEM, sanitizeHistory, validateGroundedAnswer } from "@/lib/agent";
-import { generateAnswer, providerStatus } from "@/lib/providers";
-import { citationsFor, extractiveAnswer } from "@/lib/retrieve";
+import { generateGroundedReply } from "@/lib/answer";
+import { sanitizeHistory } from "@/lib/agent";
+import { providerStatus } from "@/lib/providers";
+import { citationsFor } from "@/lib/retrieve";
 import { evidenceDocs, retrieveEvidence } from "@/lib/rag/search";
 import { isBlockedQuestion } from "@/lib/rag/core";
 import { knowledgeStatus, loadRagEvidence } from "@/lib/rag/server";
@@ -55,19 +56,15 @@ export async function POST(req: Request) {
   if (!result.docs.length) return NextResponse.json({ answer: REFUSAL, citations: [], mode: "refused", suggestions: ["What is VeraScan?", "Which projects are live?"] }, { headers });
   const docs = result.docs;
   const citations = citationsFor(docs);
-  const context = docs.map((d, i) => `[${i + 1}] ${d.provenance ? "SUPPLEMENTARY SNAPSHOT" : "APPROVED PORTFOLIO FACTS"}: ${d.title}\n${d.text}`).join("\n\n");
   const project = docs.find(d => d.project)?.project;
   const suggestions = project ? [`How does ${project.name} work?`, `What are the limitations of ${project.name}?`, "Which projects are live?"] : ["What are his achievements?", "What is VeraScan?", "How can I contact him?"];
-  const fallback = (mode: "offline" | "guarded", note: string) => NextResponse.json({ answer: extractiveAnswer(docs), citations, mode, note, suggestions }, { headers });
   try {
-    const generated = await generateAnswer(ASSISTANT_SYSTEM, `SOURCE DOCUMENTS:\n${context}\n\nQUESTION: ${question}`, history, undefined, req.signal);
-    const validation = validateGroundedAnswer(generated.text, docs, question);
-    if (!validation.valid) return fallback("guarded", "I couldn't verify the generated answer, so here are the original portfolio facts.");
-    // Keep all markers aligned with their original source numbers.
-    const used = validation.cited.map(index => ({ ...citationsFor([docs[index - 1]])[0], index }));
-    return NextResponse.json({ answer: generated.text, citations: used, mode: "llm", provider: generated.provider, suggestions }, { headers });
+    const result = await generateGroundedReply(question, docs, history, req.signal);
+    const used = result.mode === "llm" ? result.cited.map(index => ({ ...citationsFor([docs[index - 1]])[0], index })) : citations;
+    const note = result.mode === "guarded" ? "I couldn't verify the generated answer, so here are the original portfolio facts." : result.mode === "offline" ? "The language model is unavailable. These are the original facts from this portfolio, with sources." : undefined;
+    return NextResponse.json({ answer: result.text, citations: used, mode: result.mode, provider: result.provider, model: result.model, generationMs: result.generationMs, note, suggestions }, { headers });
   } catch {
     if (req.signal.aborted) return new Response(null, { status: 499 });
-    return fallback("offline", "The language model is unavailable. These are the original facts from this portfolio, with sources.");
+    return NextResponse.json({ error: "The answer timed out. Please try again." }, { status: 503, headers });
   }
 }

@@ -13,6 +13,8 @@ interface Msg {
   mode?: "llm" | "offline" | "guarded" | "refused" | "error" | "greeting" | "cancelled" | "source-unavailable";
   note?: string;
   suggestions?: string[];
+  provider?: string;
+  model?: string;
 }
 const modes: Record<string, string> = { llm: "Source-checked answer", offline: "Original portfolio facts", guarded: "Original facts · generated answer withheld", refused: "Outside portfolio scope", greeting: "Ready to explore", cancelled: "Stopped", "source-unavailable": "Source unavailable · verified profile link", error: "Request interrupted" };
 
@@ -56,7 +58,7 @@ export default function Assistant() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "I couldn't complete that request. Please try again.");
       if (typeof data.answer !== "string") throw new Error("The response was incomplete. Please try again.");
-      setMsgs(m => [...m, { role: "assistant", text: data.answer, citations: data.citations, mode: data.mode, note: data.note, suggestions: data.suggestions }]);
+      setMsgs(m => [...m, { role: "assistant", text: data.answer, citations: data.citations, mode: data.mode, note: data.note, suggestions: data.suggestions, provider: data.provider, model: data.model }]);
     } catch (error) {
       const stopped = abort.signal.aborted && abort.signal.reason !== "timeout";
       setMsgs(m => [...m, { role: "assistant", text: stopped ? "Stopped. Ask another question whenever you're ready." : abort.signal.aborted ? "That took too long. Please try again." : error instanceof Error ? error.message : "Connection interrupted. Please try again.", mode: stopped ? "cancelled" : "error" }]);
@@ -123,7 +125,7 @@ export default function Assistant() {
               {message.note && <p className="rounded-lg border border-line bg-raised/50 px-3 py-2 text-xs leading-relaxed text-muted">{message.note}</p>}
               <div className="whitespace-pre-wrap break-words text-sm leading-7 text-ink">{answerBody(message)}</div>
               {!!message.citations?.length && <div data-testid="citations"><p className="label mb-2 !text-[10px]">Sources on this page</p><div className="flex flex-wrap gap-2">{message.citations.map(c => <a key={`${c.href}-${c.index}`} href={c.href} target={c.href.startsWith("https:") ? "_blank" : undefined} rel={c.href.startsWith("https:") ? "noopener noreferrer" : undefined} onClick={e=>cite(c,e)} data-citation={c.label} className="rounded-lg border border-accent/30 bg-accent/5 px-2.5 py-1.5 text-xs text-accent hover:bg-accent/15">{c.label} ↗</a>)}</div></div>}
-              <div className="flex items-center justify-between gap-3"><span className="font-mono text-[10px] text-muted">{modes[message.mode ?? ""]}</span><button type="button" aria-label="Copy answer" onClick={async()=>{try{await navigator.clipboard.writeText(message.text.replace(/\[\d+\]/g,""));setCopied(i);setTimeout(()=>setCopied(null),1800);}catch{setCopied(null);}}} className="shrink-0 rounded px-2 py-1 text-xs text-muted hover:bg-raised">{copied===i?"Copied ✓":"Copy"}</button></div>
+              <div className="flex items-center justify-between gap-3"><span className="font-mono text-[10px] text-muted">{message.provider && (message.mode === "llm" || message.mode === "guarded") ? `${message.provider}${message.model ? ` · ${message.model}` : ""} · ` : ""}{modes[message.mode ?? ""]}</span><button type="button" aria-label="Copy answer" onClick={async()=>{try{await navigator.clipboard.writeText(message.text.replace(/\[\d+\]/g,""));setCopied(i);setTimeout(()=>setCopied(null),1800);}catch{setCopied(null);}}} className="shrink-0 rounded px-2 py-1 text-xs text-muted hover:bg-raised">{copied===i?"Copied ✓":"Copy"}</button></div>
               {message.mode === "error" && lastQuestion && <button type="button" disabled={busy} onClick={()=>ask(lastQuestion)} aria-label="Try again" className="link text-sm text-accent">Try again ↗</button>}
             </>}
           </motion.div>)}
