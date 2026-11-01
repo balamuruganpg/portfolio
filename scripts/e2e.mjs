@@ -149,7 +149,7 @@ ok("VeraScan answer does not invent a paper", !/\b(paper|arxiv|publication|journ
 ok("VeraScan answer mentions PyPI", /pypi|pip install/i.test(v.text));
 
 const live = await askAssistant("Which projects are live?");
-ok("live question cites all five deployed projects", ["LungScan AI", "PneumoScan", "ChurnGuard Pro", "OncoInsight Pro", "Signal"].every(name => live.cites.includes(name)), `citations: ${live.cites.join(", ")}`);
+ok("live question cites all six deployed projects", ["LungScan AI", "PneumoScan", "ChurnGuard Pro", "OncoInsight Pro", "Signal", "Luxury Car Dealership"].every(name => live.cites.includes(name)), `citations: ${live.cites.join(", ")}`);
 
 const stack = await askAssistant("What stack for LungScan?");
 ok("LungScan stack cites LungScan AI only", stack.cites[0] === "LungScan AI", `citations: ${stack.cites.join(", ")}`);

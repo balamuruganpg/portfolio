@@ -46,11 +46,11 @@ try {
       assert.deepEqual(retrieveConversation("Give me links for live apps",docs,[],memoryFor(docs.filter(d=>d.project?.slug==="verascan"))).docs.map(d=>d.id),memory.sourceIds);
       const allLinks=live.map((d,i)=>`${d.project.name}: ${d.project.live} [${i+1}]`).join("\n\n");
       assert.equal(validateGroundedAnswer(allLinks,live,"Give me direct links").valid,true);
-      assert.equal(validateGroundedAnswer(allLinks.split("\n\n").slice(0,4).join("\n\n"),live,"Give me direct links").valid,false);
+      assert.equal(validateGroundedAnswer(allLinks.split("\n\n").slice(0,-1).join("\n\n"),live,"Give me direct links").valid,false);
     });
-    await check("direct-link follow-up retains all five live projects rather than an unrelated repository", () => {
+    await check("direct-link follow-up retains all six live projects rather than an unrelated repository", () => {
       const live = docs.filter(d => d.project?.live);
-      const history = [{role:"user",text:"Which projects are live?",citations:[]},{role:"assistant",text:"These five projects are live.",citations:live.map(d=>({label:d.title,href:d.href}))}];
+      const history = [{role:"user",text:"Which projects are live?",citations:[]},{role:"assistant",text:"These six projects are live.",citations:live.map(d=>({label:d.title,href:d.href}))}];
       for (const question of ["Give me direct links", "Links please", "Where can I try them?"]) {
         const result = retrieveConversation(question, docs, history);
         assert.deepEqual(result.docs.map(d=>d.id), live.map(d=>d.id), question);
@@ -80,7 +80,13 @@ try {
     await check("small unsupported numbers are rejected", () => assert.deepEqual(unsupportedNumbers("It has 3 checks.", "It has 4 checks."), ["3"]));
     await check("Unicode spaced percentages are normalized", () => assert.deepEqual(unsupportedNumbers("Savings were 32.77\u202f%.", "Savings 32.77%."), []));
     await check("explicit project stays specific", () => assert.deepEqual(retrieve("What is VeraScan?", docs).docs.map(d => d.id), ["project:verascan"]));
-    await check("live app list includes all five deployed projects and excludes prototypes and packages", () => assert.deepEqual(retrieve("Which projects are live?", docs).docs.map(d => d.project?.slug), ["lungscan-ai", "pneumoscan", "churnguard-pro", "oncoinsight-pro", "signal"]));
+    await check("live app list includes all six deployed projects and excludes prototypes and packages", () => assert.deepEqual(retrieve("Which projects are live?", docs).docs.map(d => d.project?.slug), ["lungscan-ai", "pneumoscan", "churnguard-pro", "oncoinsight-pro", "signal", "luxury-car-dealership"]));
+    await check("dealership evidence exposes the exact owner-provided live URL",()=>{
+      const result=retrieve("Is Luxury Car Dealership live?",docs);
+      assert.equal(result.docs[0]?.project?.live,"https://balamuruganpg.xyz/");
+      assert.match(result.docs[0].text,/Status: live, deployed and usable online/);
+      assert.equal(validateGroundedAnswer("Luxury Car Dealership: https://balamuruganpg.xyz/ [1]",result.docs,"Give me direct links").valid,true);
+    });
     await check("the mini project's live answer stays scoped to Signal and its verified URL", () => {
       const selected = retrieve("Is the mini project live?", docs).docs;
       assert.deepEqual(selected.map(d => d.id), ["project:signal"]);

@@ -24,7 +24,7 @@ try {
   await check("validated session scope preserves every live app even if a semantic plan suggests another project",()=>{
     const live=approved.filter(d=>d.project?.live);
     const memory={version:1,sourceIds:live.map(d=>d.id)};
-    const r=retrieveEvidence("Give me direct links",approved,[],[],12000,{ids:["project:luxury-car-dealership"],queries:[],intent:"list"},memory);
+    const r=retrieveEvidence("Give me direct links",approved,[],[],12000,{ids:["project:certiroute"],queries:[],intent:"list"},memory);
     assert.deepEqual(r.docs.map(d=>d.id),memory.sourceIds);
     assert.equal(r.aliasHit,true);
   });

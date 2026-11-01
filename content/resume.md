@@ -67,6 +67,12 @@
 - Live app: https://oncoinsight-pro-cancer-analytics.streamlit.app/
 - Description: Cancer analytics dashboard in Streamlit over 17,686 records, with statistical analysis plus Gradient Boosting regression and classification (GBR/GBC).
 
+## Live Web Project: Luxury Car Dealership
+- Project: Luxury Car Dealership
+- Repository: https://github.com/balamuruganpg/Luxury-Car-Dealership
+- Live app: https://balamuruganpg.xyz/
+- Description: Luxury car dealership web project.
+
 ## Skills & Core Competencies
 - ML & Deep Learning: Reinforcement Learning (PPO), CNNs (DenseNet121, MobileNetV2), RNN, ANN, Gradient Boosting, Clustering (K-Means, DBSCAN, Hierarchical), Grad-CAM explainability.
 - LLMs & Multi-Agent: Coordinated multi-agent topologies, multi-provider LLM fallback, deterministic fact-checking, retrieval-grounded systems.

@@ -451,6 +451,7 @@ export const projects: Project[] = [
     slug: "luxury-car-dealership",
     name: "Luxury Car Dealership",
     repo: gh("Luxury-Car-Dealership"),
+    live: "https://balamuruganpg.xyz/",
     categories: ["Web"],
     summary: "Luxury car dealership web project.",
     stack: ["Web"],

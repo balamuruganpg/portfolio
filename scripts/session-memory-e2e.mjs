@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 
 const base=process.argv[2]||"http://localhost:3000";
-const expected=["https://medrag.in","https://pneumonia-scan.streamlit.app/","https://churn-guard-dash.streamlit.app/","https://oncoinsight-pro-cancer-analytics.streamlit.app/","https://cloud-sla-monitoring-system.streamlit.app/"];
+const expected=["https://medrag.in","https://pneumonia-scan.streamlit.app/","https://churn-guard-dash.streamlit.app/","https://oncoinsight-pro-cancer-analytics.streamlit.app/","https://cloud-sla-monitoring-system.streamlit.app/","https://balamuruganpg.xyz/"];
 const history=[];
 let memory;
 async function ask(question,prior=history,scope=memory){
@@ -15,15 +15,16 @@ function generated(result){assert.equal(result.mode,"llm");assert.equal(result.p
 function allLinks(result){
   generated(result);
   for(const url of expected)assert.ok(result.answer.includes(url.replace(/\/$/,"")),`Missing ${url}`);
-  assert.equal(result.memory.sourceIds.length,5);
-  assert.ok(!/luxury car|only documented project/i.test(result.answer));
+  assert.equal(result.memory.sourceIds.length,expected.length);
+  assert.ok(!/only documented project/i.test(result.answer));
 }
 const first=await ask("Which projects are live?");generated(first);
+for(const name of ["LungScan AI","PneumoScan","ChurnGuard Pro","OncoInsight Pro","Signal","Luxury Car Dealership"])assert.ok(first.answer.includes(name),`Missing live project ${name}`);
 memory=first.memory;
-assert.equal(memory.sourceIds.length,5);
+assert.equal(memory.sourceIds.length,expected.length);
 history.push({role:"user",text:"Which projects are live?"},{role:"assistant",text:first.answer,citations:first.citations});
 allLinks(await ask("Give me direct links"));
-console.log("PASS exact two-turn conversation returns all five actual app URLs");
+console.log("PASS exact two-turn conversation returns all six actual app URLs");
 allLinks(await ask("Links please",[],memory));
 console.log("PASS session topic memory works without recent messages");
 const changed=await ask("What is VeraScan?",[],memory);generated(changed);

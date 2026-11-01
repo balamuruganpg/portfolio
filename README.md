@@ -89,7 +89,7 @@ flowchart TD
 | **DBSCAN Clustering** | Clustering | Density-Based Spatial Clustering | Noise-tolerant geometric cluster identification. |
 | **Hierarchical Clustering** | Clustering | Agglomerative Clustering | Dendrogram tree clustering over anthropometric observations. |
 | **Video Game Sales EDA** | EDA | Pandas, Seaborn, Matplotlib | Multi-decade global video game sales distribution profiling. |
-| **Luxury Car Dealership** | Web | JavaScript, HTML/CSS | Automotive inventory showcase and responsive sales UI. |
+| **Luxury Car Dealership** | Web | JavaScript, HTML/CSS | Automotive inventory showcase and responsive sales UI. [Live app](https://balamuruganpg.xyz/) |
 
 </details>
 

@@ -8,6 +8,13 @@ try {
   const page=await context.newPage();
   const errors=[];page.on("pageerror",e=>errors.push(e.message));
   await page.goto(base,{waitUntil:"networkidle"});
+  assert.equal(await page.locator('[data-project] a[data-kind="live"]').count(),6);
+  const dealership=page.locator('#p-luxury-car-dealership');
+  const dealershipLink=dealership.locator('a[data-kind="live"]');
+  assert.equal(await dealershipLink.getAttribute("href"),"https://balamuruganpg.xyz/");
+  assert.equal(await dealershipLink.getAttribute("target"),"_blank");
+  assert.ok((await dealership.innerText()).includes("live"));
+  console.log("PASS six live project cards include the dealership badge and exact destination");
   await page.getByRole("button",{name:"Open portfolio assistant",exact:true}).click();
   const dialog=page.getByRole("dialog",{name:"Portfolio assistant"});
   async function ask(question){
@@ -21,7 +28,8 @@ try {
     return data;
   }
   const first=await ask("Which projects are live?");
-  assert.equal(first.memory.sourceIds.length,5);
+  assert.equal(first.memory.sourceIds.length,6);
+  assert.ok(first.answer.includes("Luxury Car Dealership"));
   await dialog.getByRole("button",{name:"Close assistant"}).click();
   await page.getByRole("button",{name:"Open portfolio assistant",exact:true}).click();
   assert.ok((await dialog.innerText()).includes("Which projects are live?"));
@@ -29,7 +37,7 @@ try {
   await page.getByRole("button",{name:"Open portfolio assistant",exact:true}).click();
   assert.ok((await dialog.innerText()).includes("Which projects are live?"));
   const second=await ask("Give me direct links");
-  const destinations=["https://medrag.in","https://pneumonia-scan.streamlit.app/","https://churn-guard-dash.streamlit.app/","https://oncoinsight-pro-cancer-analytics.streamlit.app/","https://cloud-sla-monitoring-system.streamlit.app/"];
+  const destinations=["https://medrag.in","https://pneumonia-scan.streamlit.app/","https://churn-guard-dash.streamlit.app/","https://oncoinsight-pro-cancer-analytics.streamlit.app/","https://cloud-sla-monitoring-system.streamlit.app/","https://balamuruganpg.xyz/"];
   for(const url of destinations){
     assert.ok(second.answer.includes(url.replace(/\/$/,"")));
     const link=dialog.locator(`a[href="${url}"],a[href="${url.replace(/\/$/,"")}"]`).first();
@@ -37,7 +45,7 @@ try {
     assert.equal(await link.getAttribute("target"),"_blank");
   }
   assert.deepEqual(second.memory.sourceIds,first.memory.sourceIds);
-  console.log("PASS mobile: actual Groq+RAG list -> close/reopen -> reload -> all five clickable direct links");
+  console.log("PASS mobile: actual Groq+RAG list -> close/reopen -> reload -> all six clickable direct links");
   for(const width of [375,768,1440]){
     await page.setViewportSize({width,height:900});
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`Overflow at ${width}`);
