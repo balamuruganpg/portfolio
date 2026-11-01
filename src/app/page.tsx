@@ -272,6 +272,10 @@ export default function Home() {
                           {e.role} {e.detail ? `· ${e.detail}` : ""} · {e.mode}
                         </p>
                         <ul className="mt-3 list-disc space-y-2 pl-4 text-sm leading-relaxed text-muted">{e.outcomes.map((outcome) => <li key={outcome}>{outcome}</li>)}</ul>
+                        {e.certificate && <p className="mt-3 text-xs text-muted">
+                          <a href={e.certificate.file} target="_blank" rel="noopener noreferrer" aria-label={`View ${e.org} internship certificate (PDF)`} className="link hover:text-ink">View internship certificate (PDF) ↗</a>
+                          <span className="mt-1 block font-mono text-[10px]">Certificate ID: {e.certificate.id}</span>
+                        </p>}
                       </div>
                     ))}
                   </div>

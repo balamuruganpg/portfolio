@@ -99,7 +99,11 @@ export const experience = [
     mode: "Remote",
     period: "May–Aug 2026",
     detail: "",
-    outcomes: ["Worked with Python, Pandas, NumPy and Scikit-learn for data preprocessing and basic machine learning tasks.", "Learned model training, evaluation and data analysis techniques using real-world datasets."],
+    outcomes: [
+      "Engineered data preprocessing pipelines in Python with Pandas and NumPy, converting raw real-world datasets into clean, model-ready data.",
+      "Built and trained machine learning models with scikit-learn for analysis and prediction tasks.",
+      "Evaluated model performance through systematic data analysis, validating results on real-world datasets.",
+    ],
   },
   {
     org: "Yuva Intern",
@@ -107,7 +111,15 @@ export const experience = [
     mode: "Remote",
     period: "Mar–Apr 2026",
     detail: "Automotive AI",
-    outcomes: ["Completed an introductory internship focused on AI applications in the automotive domain.", "Worked on basic AI/ML tasks with Python-based tools and participated in remote technical discussions with mentors."],
+    outcomes: [
+      "Applied AI and machine learning techniques to use cases in the automotive domain.",
+      "Implemented Python-based AI/ML workflows for automotive application tasks.",
+      "Refined technical approaches through remote review discussions with mentors.",
+    ],
+    certificate: {
+      id: "YI/2026/62387/153736",
+      file: "/internships/yuva-intern-automotive-ai-certificate.pdf",
+    },
   },
 ];
 
