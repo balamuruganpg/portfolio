@@ -48,19 +48,13 @@ export default function Nav() {
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     const target = document.getElementById(id);
     if (!target) return;
-    event.preventDefault();
-    setMenuOpen(false);
-    const hash = `#${id}`;
-    if (window.location.hash !== hash) window.history.pushState(null, "", hash);
-    // Navigate independently of the animated link's removal, including repeat taps.
-    requestAnimationFrame(() => {
-      if (!target.hasAttribute("tabindex")) {
-        target.setAttribute("tabindex", "-1");
-        target.addEventListener("blur", () => target.removeAttribute("tabindex"), { once: true });
-      }
-      target.focus({ preventScroll: true });
-      target.scrollIntoView({ behavior: reduce ? "instant" : "smooth", block: "start" });
-    });
+    if (!target.hasAttribute("tabindex")) {
+      target.setAttribute("tabindex", "-1");
+      target.addEventListener("blur", () => target.removeAttribute("tabindex"), { once: true });
+    }
+    // Let the native fragment action handle history, focus and scrolling together,
+    // just like the hero link. Close only after that action has run.
+    requestAnimationFrame(() => setMenuOpen(false));
   };
 
   return <header ref={header} className="fixed inset-x-0 top-0 z-50 px-3 pt-3 md:px-5 md:pt-4">

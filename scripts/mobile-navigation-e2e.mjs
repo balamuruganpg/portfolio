@@ -36,6 +36,23 @@ try {
       const errors = [];
       page.on("pageerror", error => errors.push(error.message));
       await page.goto(baseURL, { waitUntil: "networkidle" });
+
+      // Reproduce focus-related viewport restoration cancelling a separate smooth scroll.
+      // Use a real competing browser scroll, rather than replacing the scroll APIs.
+      await page.evaluate(() => {
+        const restoreViewport = event => {
+          if (event.target.id !== "experience") return;
+          document.removeEventListener("focusin", restoreViewport);
+          const previousTop = scrollY;
+          queueMicrotask(() => window.scrollTo({ top: previousTop, behavior: "instant" }));
+        };
+        document.addEventListener("focusin", restoreViewport);
+      });
+      await page.getByRole("button", { name: "Menu", exact: true }).tap();
+      await page.locator('#mobile-navigation a[href="#experience"]').tap();
+      await arrived(page, "experience");
+      pass(`${width}px ${reducedMotion}: Experience arrives despite competing focus scroll`);
+
       for (const id of destinations) {
         await page.getByRole("button", { name: "Menu", exact: true }).tap();
         await page.locator(`#mobile-navigation a[href="#${id}"]`).tap();
