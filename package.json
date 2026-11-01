@@ -10,6 +10,8 @@
     "test:assistant": "node scripts/assistant-test.mjs",
     "test:session": "node scripts/session-memory-test.mjs",
     "test:session:e2e": "node scripts/session-memory-e2e.mjs",
+    "test:recall": "node scripts/conversation-recall-test.mjs && node scripts/chat-route-test.mjs",
+    "test:recall:e2e": "node scripts/conversation-recall-e2e.mjs",
     "test:details": "node scripts/detail-conversation-e2e.mjs",
     "test:credentials": "node scripts/credentials-test.mjs",
     "test:credentials:e2e": "node scripts/credentials-e2e.mjs",

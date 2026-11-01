@@ -97,5 +97,5 @@ export async function generateGroundedReply(
       break;
     }
   }
-  return { text: "I found relevant sources, but couldn't finish a source-checked answer just now. Please try again, or open the linked sources below.", mode: last ? "guarded" : "offline", cited: [], ...last, ...(last ? { generationMs: Date.now() - started } : {}) };
+  return { text: "I found relevant sources, but couldn't finish a source-checked answer just now. Please try again.", mode: last ? "guarded" : "offline", cited: [], ...last, ...(last ? { generationMs: Date.now() - started } : {}) };
 }

@@ -7,7 +7,7 @@ import { pathToFileURL } from "node:url";
 import ts from "typescript";
 
 const folder = await fs.mkdtemp(path.join(os.tmpdir(), "portfolio-agent-test-"));
-const modules = { credentials: "src/data/credentials.ts", site: "src/data/site.ts", corpus: "src/lib/corpus.ts", retrieve: "src/lib/retrieve.ts", agent: "src/lib/agent.ts", providers: "src/lib/providers.ts", answer: "src/lib/answer.ts" };
+const modules = { credentials: "src/data/credentials.ts", site: "src/data/site.ts", session: "src/lib/session.ts", corpus: "src/lib/corpus.ts", retrieve: "src/lib/retrieve.ts", agent: "src/lib/agent.ts", providers: "src/lib/providers.ts", answer: "src/lib/answer.ts" };
 let failures = 0;
 async function check(name, test) {
   try { await test(); console.log(`PASS ${name}`); }
@@ -20,7 +20,7 @@ try {
     catch { console.error(`FAIL missing module ${file}`); process.exitCode = 1; break; }
     const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText
       .replaceAll('"@/data/site"', '"./site.mjs"')
-      .replace(/"\.\/(credentials|corpus|retrieve|agent|providers|answer)"/g, '"./$1.mjs"');
+      .replace(/"\.\/(credentials|session|corpus|retrieve|agent|providers|answer)"/g, '"./$1.mjs"');
     await fs.writeFile(path.join(folder, `${name}.mjs`), output);
   }
   if (!process.exitCode) {
@@ -30,6 +30,12 @@ try {
     const { generateAnswer, providerKeys, providerStatus, assistantInformation } = await import(pathToFileURL(path.join(folder, "providers.mjs")));
     const { generateGroundedReply } = await import(pathToFileURL(path.join(folder, "answer.mjs")));
     const docs = buildSiteDocs();
+    await check("provider receives six complete exchanges, never six individual messages",async()=>{
+      const h=Array.from({length:7},(_,i)=>[{role:"user",text:`Question ${i+1}`,citations:[]},{role:"assistant",text:`Reply ${i+1}`,citations:[]}]).flat();
+      let body;
+      await generateAnswer("system","current",h,{groqKey:"fixture-key"},undefined,async(_url,init)=>{body=JSON.parse(init.body);return Response.json({choices:[{message:{content:"Supported. [1]"}}]});});
+      assert.equal(body.messages.length,14);assert.equal(body.messages[1].content,"Question 2");assert.equal(body.messages[12].content,"Reply 7");
+    });
     await check("session topic memory survives a bounded history and only contains approved IDs", () => {
       const live = docs.filter(d=>d.project?.live);
       const memory = memoryFor(live);

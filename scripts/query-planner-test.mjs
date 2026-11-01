@@ -7,9 +7,9 @@ import ts from "typescript";
 
 const folder = await fs.mkdtemp(path.join(os.tmpdir(), "portfolio-query-plan-"));
 try {
-  for (const [name, file] of Object.entries({ planning: "src/lib/rag/planning.ts", providers: "src/lib/providers.ts" })) {
+  for (const [name, file] of Object.entries({ planning: "src/lib/rag/planning.ts", providers: "src/lib/providers.ts", session: "src/lib/session.ts" })) {
     const source = await fs.readFile(file, "utf8");
-    const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText.replace('"../providers"', '"./providers.mjs"');
+    const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText.replace('"../providers"', '"./providers.mjs"').replace(/"\.{1,2}\/session"/g,'"./session.mjs"');
     await fs.writeFile(path.join(folder, name + ".mjs"), output);
   }
   const { planQuestion, shouldPlanQuestion } = await import(pathToFileURL(path.join(folder, "planning.mjs")));

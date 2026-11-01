@@ -1,4 +1,5 @@
 import type { HistoryItem } from "./agent";
+import { trimExchanges } from "./session";
 
 export interface ProviderKeys { groqKey?: string; groqKey2?: string; geminiKey?: string; openRouterKey?: string }
 export function providerKeys(): ProviderKeys {
@@ -52,7 +53,7 @@ export async function generateAnswer(
         headers: { "Content-Type": "application/json", ...(attempt.gemini ? { "x-goog-api-key": attempt.key } : { Authorization: `Bearer ${attempt.key}` }) },
         body: JSON.stringify(attempt.gemini ? {
           systemInstruction: { parts: [{ text: system }] },
-          contents: [...history.slice(-6).map(h => ({ role: h.role === "assistant" ? "model" : "user", parts: [{ text: h.text }] })), { role: "user", parts: [{ text: prompt }] }],
+          contents: [...trimExchanges(history).messages.map(h => ({ role: h.role === "assistant" ? "model" : "user", parts: [{ text: h.text }] })), { role: "user", parts: [{ text: prompt }] }],
           generationConfig: { temperature: 0.1, maxOutputTokens: 1600, ...(options.schema ? { responseMimeType: "application/json" } : {}) },
         } : {
           model: attempt.model,
@@ -60,7 +61,7 @@ export async function generateAnswer(
           max_completion_tokens: options.schema ? 1600 : 1200,
           ...(attempt.provider === "Groq" && attempt.model.startsWith("openai/gpt-oss-") ? { reasoning_effort: "low" } : {}),
           ...(options.schema && attempt.provider === "Groq" && attempt.model.startsWith("openai/gpt-oss-") ? { response_format: { type: "json_schema", json_schema: { name: "portfolio_answer", strict: true, schema: options.schema } } } : {}),
-          messages: [{ role: "system", content: system }, ...history.slice(-6).map(h => ({ role: h.role, content: h.text })), { role: "user", content: prompt }],
+          messages: [{ role: "system", content: system }, ...trimExchanges(history).messages.map(h => ({ role: h.role, content: h.text })), { role: "user", content: prompt }],
         }),
       });
       if (!response.ok) {

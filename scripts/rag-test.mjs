@@ -9,11 +9,11 @@ const folder = await fs.mkdtemp(path.join(os.tmpdir(), "portfolio-rag-test-"));
 let failures = 0, passed = 0;
 const check = async (name, fn) => { try { await fn(); passed++; console.log(`PASS ${name}`); } catch (error) { failures++; console.error(`FAIL ${name}: ${error.message}`); } };
 try {
-  const modules = { credentials:"src/data/credentials.ts", site:"src/data/site.ts", corpus:"src/lib/corpus.ts", retrieve:"src/lib/retrieve.ts", agent:"src/lib/agent.ts", core:"src/lib/rag/core.ts", search:"src/lib/rag/search.ts" };
+  const modules = { credentials:"src/data/credentials.ts", site:"src/data/site.ts", session:"src/lib/session.ts", corpus:"src/lib/corpus.ts", retrieve:"src/lib/retrieve.ts", agent:"src/lib/agent.ts", core:"src/lib/rag/core.ts", search:"src/lib/rag/search.ts" };
   for (const [name,file] of Object.entries(modules)) {
     const source = await fs.readFile(file,"utf8");
     const output = ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText
-      .replaceAll('"@/data/site"','"./site.mjs"').replace(/"\.{1,2}\/(credentials|corpus|retrieve|agent|core|search)"/g,'"./$1.mjs"');
+      .replaceAll('"@/data/site"','"./site.mjs"').replace(/"\.{1,2}\/(credentials|session|corpus|retrieve|agent|core|search)"/g,'"./$1.mjs"');
     await fs.writeFile(path.join(folder,`${name}.mjs`),output);
   }
   const { buildSiteDocs } = await import(pathToFileURL(path.join(folder,"corpus.mjs")));
