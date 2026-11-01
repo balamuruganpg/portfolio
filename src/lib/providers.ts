@@ -11,6 +11,13 @@ export function providerStatus(keys = providerKeys()) {
   return { hasKey: false, provider: null, model: null };
 }
 
+/** Runtime information is authoritative server metadata, not a project claim. */
+export function assistantInformation(question: string, status = providerStatus()): string | null {
+  const q = question.trim().replace(/[?.!]+$/, "").replace(/\s+/g, " ");
+  if (!/^(?:who|what) are you$|^(?:what|which) (?:ai )?(?:model|llm|provider) (?:are you(?: using)?|you are|do you use|powers you|is powering you)(?: (?:currently|right now|for this chat))?$|^(?:are you using|do you use|are you powered by) (?:groq|gemini|openrouter|an? (?:ai|llm|model))(?: (?:currently|right now|for this chat))?$/i.test(q)) return null;
+  return status.hasKey ? `I'm Balamurugan's portfolio assistant, configured to use ${status.provider} with ${status.model}. I retrieve relevant portfolio, GitHub, resume and certificate evidence before asking the model to compose an answer. Each generated reply shows the provider and model actually used, with citations.` : "I'm Balamurugan's portfolio assistant. I retrieve relevant portfolio evidence, but no language-model provider is currently configured.";
+}
+
 export async function generateAnswer(
   system: string,
   prompt: string,

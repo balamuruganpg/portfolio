@@ -11,14 +11,22 @@ interface Msg {
   role: "user" | "assistant";
   text: string;
   citations?: Citation[];
-  mode?: "llm" | "offline" | "guarded" | "refused" | "error" | "greeting" | "cancelled" | "source-unavailable";
+  mode?: "llm" | "offline" | "guarded" | "refused" | "error" | "greeting" | "cancelled" | "source-unavailable" | "assistant-info" | "clarification";
   note?: string;
   suggestions?: string[];
   provider?: string;
   model?: string;
   actions?: { type: "credentials"; label: string; query: string }[];
 }
-const modes: Record<string, string> = { llm: "Source-checked answer", offline: "Original portfolio facts", guarded: "Original facts · generated answer withheld", refused: "Outside portfolio scope", greeting: "Ready to explore", cancelled: "Stopped", "source-unavailable": "Source unavailable · verified profile link", error: "Request interrupted" };
+const modes: Record<string, string> = { llm: "RAG answer · source-checked", offline: "Model unavailable · sources found", guarded: "Draft withheld · retry available", refused: "Outside portfolio scope", greeting: "Ready to explore", cancelled: "Stopped", "source-unavailable": "Source unavailable · verified profile link", "assistant-info": "Assistant information", clarification: "Choose a subject", error: "Request interrupted" };
+
+function promptLabel(question: string): string {
+  if (/^How does .+ work\?$/.test(question)) return "How it works";
+  if (/^Explain .+ with a simple example$/.test(question)) return "Simple example";
+  if (/^How can I try .+\?$/.test(question)) return "Try it";
+  if (/^Show me .+'s implementation$/.test(question)) return "Implementation";
+  return question;
+}
 
 export default function Assistant() {
   const reduce = useReducedMotion();
@@ -116,7 +124,7 @@ export default function Assistant() {
       {open && <motion.section ref={dialogRef} key="assistant" initial={{ opacity: 0, y: reduce ? 0 : 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: reduce ? 0 : 12 }} transition={{ duration: reduce ? 0 : 0.25 }} role="dialog" aria-label="Portfolio assistant" data-testid="assistant" className="fixed right-3 bottom-3 z-[60] flex h-[min(710px,calc(100dvh-1.5rem))] w-[min(470px,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-2xl">
         <header className="border-b border-line bg-raised/50 px-5 py-4">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3"><span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 text-accent"><AssistantMark className="h-7 w-7" /></span><div><h2 className="text-sm font-semibold">Portfolio Assistant</h2><p className="mt-0.5 font-mono text-[10px] text-muted">{provider ? `${provider} configured · evidence checked` : "Evidence mode · no model required"}</p></div></div>
+            <div className="flex min-w-0 items-center gap-3"><span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 text-accent"><AssistantMark className="h-7 w-7" /></span><div><h2 className="text-sm font-semibold">Portfolio Assistant</h2><p className="mt-0.5 font-mono text-[10px] text-muted">{provider ? `${provider} + portfolio RAG` : "Sources ready · model not configured"}</p></div></div>
             <div className="flex items-center gap-1"><button type="button" disabled={busy || !msgs.length} onClick={() => {setMsgs([]);setInput("");inputRef.current?.focus();}} aria-label="Clear conversation" title="New conversation" className="rounded-lg p-2 text-muted hover:bg-raised disabled:opacity-30">↺</button><button type="button" onClick={() => setOpen(false)} aria-label="Close assistant" className="rounded-lg p-2 text-muted hover:bg-raised">✕</button></div>
           </div>
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2"><p className="text-xs text-muted">Grounded on this site, not the open web.</p>{knowledge && <button type="button" onClick={()=>setShowSources(v=>!v)} aria-expanded={showSources} aria-controls="assistant-source-coverage" className="rounded px-2 py-1 font-mono text-[10px] text-accent hover:bg-raised">{knowledge.sourceCount} indexed sources {showSources?"−":"+"}</button>}</div>
@@ -124,7 +132,7 @@ export default function Assistant() {
 
         </header>
         <div ref={listRef} role="log" aria-label="Conversation" aria-live="polite" aria-relevant="additions" aria-busy={busy} className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-5">
-          {!msgs.length && <div><p className="label text-accent">Meet the work behind the claims</p><h3 className="mt-3 text-2xl font-semibold tracking-tight">What would you like to explore?</h3><p className="mt-3 text-sm leading-relaxed text-muted">Ask about a project, compare the results, or explore Balamurugan’s experience. Every factual answer links back to this portfolio.</p><div className="mt-5 grid gap-2">{STARTER_QUESTIONS.map((q,i) => <button key={q} type="button" onClick={() => ask(q)} className="group flex items-center justify-between rounded-xl border border-line bg-raised/40 px-4 py-3 text-left text-sm transition hover:border-accent/40 hover:bg-raised"><span><span aria-hidden="true" className="mr-3 font-mono text-xs text-accent">0{i+1}</span>{q}</span><span aria-hidden="true" className="text-accent transition group-hover:translate-x-1">↗</span></button>)}</div><p className="mt-5 text-xs leading-relaxed text-muted">I’ll say when something isn’t documented. If a model is unavailable, you’ll still get the original facts with citations.</p></div>}
+          {!msgs.length && <div><p className="label text-accent">Meet the work behind the claims</p><h3 className="mt-3 text-2xl font-semibold tracking-tight">What would you like to explore?</h3><p className="mt-3 text-sm leading-relaxed text-muted">Explore what Balamurugan built, how it works, and where to try it. I retrieve his documented evidence, then use the model to explain it with citations.</p><div className="mt-5 grid gap-2">{STARTER_QUESTIONS.map((q,i) => <button key={q} type="button" onClick={() => ask(q)} className="group flex items-center justify-between rounded-xl border border-line bg-raised/40 px-4 py-3 text-left text-sm transition hover:border-accent/40 hover:bg-raised"><span><span aria-hidden="true" className="mr-3 font-mono text-xs text-accent">0{i+1}</span>{q}</span><span aria-hidden="true" className="text-accent transition group-hover:translate-x-1">↗</span></button>)}</div><p className="mt-5 text-xs leading-relaxed text-muted">Ask follow-up questions in your own words. If you need a simpler explanation, just say so.</p></div>}
           {msgs.map((message,i) => <motion.div key={i} initial={false} animate={{opacity:1}} className={message.role === "user" ? "ml-8 rounded-2xl rounded-tr-sm border border-accent/20 bg-accent/10 px-4 py-3 text-sm" : "space-y-3"} data-testid={message.role === "assistant" ? "assistant-answer" : undefined}>
             {message.role === "user" ? message.text : <>
               {message.note && <p className="rounded-lg border border-line bg-raised/50 px-3 py-2 text-xs leading-relaxed text-muted">{message.note}</p>}
@@ -132,13 +140,13 @@ export default function Assistant() {
               {!!message.citations?.length && <div data-testid="citations"><p className="label mb-2 !text-[10px]">Sources</p><div className="flex flex-wrap gap-2">{message.citations.map(c => <a key={`${c.href}-${c.index}`} href={c.href} target={opensProofTab(c.href) ? "_blank" : undefined} rel={opensProofTab(c.href) ? "noopener noreferrer" : undefined} onClick={e=>cite(c,e)} data-citation={c.label} className="rounded-lg border border-accent/30 bg-accent/5 px-2.5 py-1.5 text-xs text-accent hover:bg-accent/15">{c.label} ↗</a>)}</div></div>}
               {!!message.actions?.length && <div className="flex flex-wrap gap-2">{message.actions.map(action => <button key={action.label} type="button" onClick={() => { setOpen(false); emit(EV.focusCredentials, { view: "all", query: action.query }); }} className="rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-xs font-medium text-accent hover:bg-accent/20">{action.label} →</button>)}</div>}
               <div className="flex items-center justify-between gap-3"><span className="font-mono text-[10px] text-muted">{message.provider && (message.mode === "llm" || message.mode === "guarded") ? `${message.provider}${message.model ? ` · ${message.model}` : ""} · ` : ""}{modes[message.mode ?? ""]}</span><button type="button" aria-label="Copy answer" onClick={async()=>{try{await navigator.clipboard.writeText(message.text.replace(/\[\d+\]/g,""));setCopied(i);setTimeout(()=>setCopied(null),1800);}catch{setCopied(null);}}} className="shrink-0 rounded px-2 py-1 text-xs text-muted hover:bg-raised">{copied===i?"Copied ✓":"Copy"}</button></div>
-              {message.mode === "error" && lastQuestion && <button type="button" disabled={busy} onClick={()=>ask(lastQuestion)} aria-label="Try again" className="link text-sm text-accent">Try again ↗</button>}
+              {i === msgs.length - 1 && ["error", "offline", "guarded"].includes(message.mode ?? "") && lastQuestion && <button type="button" disabled={busy} onClick={()=>ask(lastQuestion)} aria-label="Try again" className="link text-sm text-accent">Try again ↗</button>}
             </>}
           </motion.div>)}
           {busy && <div role="status" className="flex items-center gap-3 py-2 text-xs text-muted"><span className="flex gap-1" aria-hidden="true">{[0,1,2].map(i=><span key={i} className="h-1.5 w-1.5 animate-bounce rounded-full bg-accent" style={{animationDelay:`${i*140}ms`}} />)}</span>Finding sources and checking the answer…</div>}
         </div>
         <div className="border-t border-line bg-raised/30 p-4">
-          {!!msgs.length && <div className="mb-3 flex gap-2 overflow-x-auto pb-1">{suggestions.map(q=><button key={q} type="button" disabled={busy} onClick={()=>ask(q)} className="shrink-0 rounded-full border border-line bg-surface px-3 py-2 text-xs text-muted hover:border-accent/40 disabled:opacity-40">{q}</button>)}</div>}
+          {!!msgs.length && <div className="mb-3 flex flex-wrap gap-2">{suggestions.map(q=><button key={q} type="button" disabled={busy} aria-label={q} title={q} onClick={()=>ask(q)} className="max-w-full rounded-full border border-line bg-surface px-3 py-2 text-left text-xs text-muted hover:border-accent/40 disabled:opacity-40">{promptLabel(q)}</button>)}</div>}
           <form onSubmit={e=>{e.preventDefault();ask(input);}} className="flex items-center gap-2"><input ref={inputRef} value={input} onChange={e=>setInput(e.target.value)} maxLength={600} placeholder="Ask about Balamurugan’s work…" aria-label="Ask the portfolio assistant" className="min-w-0 flex-1 rounded-xl border border-line bg-bg px-3 py-3 text-sm text-ink placeholder:text-muted focus-visible:border-accent" />{busy?<button type="button" onClick={()=>controller.current?.abort()} aria-label="Stop response" className="rounded-xl border border-line px-4 py-3 text-sm">Stop</button>:<button type="submit" disabled={!input.trim()} className="rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-bg disabled:opacity-40">Ask</button>}</form>
           <p className="mt-2 text-center font-mono text-[9px] text-muted">Portfolio facts only · check the linked evidence · Esc to close</p>
         </div>

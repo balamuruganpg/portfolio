@@ -1,6 +1,6 @@
 import type { Doc } from "../corpus";
 import type { HistoryItem } from "../agent";
-import { isDetailRequest, retrieveConversation } from "../agent";
+import { asksForLimitations, isDetailRequest, isSimplificationRequest, isWorkflowRequest, retrieveConversation } from "../agent";
 import { createBm25Index, isBlockedQuestion, searchBm25, type EvidenceChunk } from "./core";
 import type { QueryPlan } from "./planning";
 
@@ -23,10 +23,10 @@ function fingerprint(text: string): string {
 function expansionSections(candidates: EvidenceChunk[], history: HistoryItem[]) {
   const previous = history.filter(h => h.role === "assistant").flatMap(h => h.citations);
   const seen = new Set(candidates.filter(c => previous.some(p => p.href === c.href && p.label === c.title)).map(c => fingerprint(c.text)));
-  const pool = candidates.filter(c => c.text.length >= 100 && fingerprint(c.heading) !== fingerprint(c.title.split("·")[0]) && !/^(?:[^a-z0-9]*)(?:overview|introduction|installation|terminal output|license|clone repository|install development dependencies)\b/i.test(c.heading) && !/^\w+\.\w+\(.*\)$/.test(c.heading));
+  const pool = candidates.filter(c => c.text.length >= 60 && fingerprint(c.heading) !== fingerprint(c.title.split("·")[0]) && !/^(?:[^a-z0-9]*)(?:overview|introduction|installation|terminal output|license|clone repository|install development dependencies)\b/i.test(c.heading) && !/^\w+\.\w+\(.*\)$/.test(c.heading));
   const fresh = pool.filter(c => !seen.has(fingerprint(c.text)));
   const available = fresh.length >= 2 ? fresh : pool;
-  const ranks = searchBm25("architecture pipeline design detection data splitting input formats CLI interfaces API outputs reports limitations safeguards evaluation", createBm25Index(available), available.length);
+  const ranks = searchBm25("architecture pipeline design detection data splitting input formats CLI interfaces API outputs reports evaluation", createBm25Index(available), available.length);
   const ordered = [...ranks.map(r => r.chunk), ...available].filter((c, i, all) => all.findIndex(x => x.id === c.id) === i);
   const selected: EvidenceChunk[] = [];
   const bodies = new Set<string>();
@@ -36,7 +36,7 @@ function expansionSections(candidates: EvidenceChunk[], history: HistoryItem[]) 
     bodies.add(body); selected.push(chunk); return true;
   };
   // Cover distinct aspects instead of taking six near-identical search hits.
-  for (const aspect of [/architecture|pipeline|design|detection engines|workflow/i, /leak.free splitting|split|preprocess/i, /CLI usage|interfaces|integration|endpoint|gateway/i, /interactive.*reports|reports|outputs|delivery/i, /limitations|caveat|safety|failure|boundar/i]) {
+  for (const aspect of [/architecture|pipeline|design|detection engines|workflow/i, /leak.free splitting|split|preprocess/i, /CLI usage|interfaces|integration|endpoint|gateway/i, /interactive.*reports|reports|outputs|delivery/i, /input formats|match records|evaluation|testing/i]) {
     const match = ordered.find(c => aspect.test(c.heading) && !bodies.has(fingerprint(c.text)));
     if (match) add(match);
   }
@@ -52,7 +52,7 @@ export function retrieveEvidence(question: string, approved: Doc[], chunks: Evid
     return project ? [c, { label: project.title, href: project.href }] : [c];
   }) }));
   let initial = retrieveConversation(question, approved, expandedHistory);
-  if (initial.offTopic) return initial;
+  if (initial.offTopic || initial.needsClarification) return initial;
   const planned = plan?.ids.flatMap(id => approved.filter(d => d.id === id)) ?? [];
   if (planned.length) initial = { docs: planned, scores: planned.map(() => 30), aliasHit: false, offTopic: false };
   const searchQuestion = [question, ...(plan?.queries ?? [])].join(" ");
@@ -68,7 +68,7 @@ export function retrieveEvidence(question: string, approved: Doc[], chunks: Evid
   }
   const slugs = new Set(initial.docs.flatMap(d => d.project ? [d.project.slug] : []));
   // Generic profile questions do not acquire unrelated README claims.
-  const candidates = chunks.filter(c => slugs.size ? slugs.has(c.projectSlug ?? "") : !c.projectSlug && /resume|education|experience|skills|linkedin|profile/i.test(searchQuestion));
+  const candidates = chunks.filter(c => (slugs.size ? slugs.has(c.projectSlug ?? "") : !c.projectSlug && /resume|education|experience|skills|linkedin|profile/i.test(searchQuestion)) && (asksForLimitations(question) || !/limitations?|drawbacks?|weakness|shortcomings|caveats?/i.test(c.heading)));
   let focus = searchQuestion.toLowerCase();
   for (const doc of initial.docs) {
     if (!doc.project) continue;
@@ -76,19 +76,28 @@ export function retrieveEvidence(question: string, approved: Doc[], chunks: Evid
   }
   focus = focus.replace(/\b(i|said|please|can|you|could|would|tell|me|more|much|details?|detailed|depth|in|go|deeper|expand|elaborate|about|it|its|this|that|the|project|package|app|system|really|not|again|explain|give|want|need|a|an|some|very|and|on|how|does|work|works)\b/g, " ").replace(/[^a-z0-9]+/g, " ").trim();
   const index = createBm25Index(candidates);
-  const detail = isDetailRequest(question) || plan?.intent === "detail";
+  const workflow = isWorkflowRequest(question);
+  const simple = isSimplificationRequest(question);
+  const detail = !simple && (isDetailRequest(question) || workflow || plan?.intent === "detail");
   const focused = detail && focus ? searchBm25(focus, index, 8) : [];
   // Conversational words such as "provide" need not match a README. Without
   // technical matches, expand the known project rather than lose its evidence.
-  const broadExpansion = detail && !focused.length;
-  const ranked = slugs.size > 1
+  const broadExpansion = workflow || simple || (detail && !focused.length);
+  const expanded = broadExpansion ? expansionSections(candidates, simple ? [] : history) : [];
+  if (simple) {
+    const priority = (chunk: EvidenceChunk) => /detection|workflow|matching|how.*works/i.test(chunk.heading) ? 0 : /reports?|outputs?|input formats?|match records/i.test(chunk.heading) ? 1 : 2;
+    expanded.sort((a,b) => priority(a) - priority(b));
+  }
+  const ranked = asksForLimitations(question)
+    ? [...candidates.filter(c => /limitations?|drawbacks?|caveats?|trade.?offs?|risks?/i.test(c.heading)), ...searchBm25(searchQuestion, index, 8).map(r => r.chunk)]
+    : slugs.size > 1
     ? [...slugs].flatMap(slug => {
       const own = candidates.filter(c => c.projectSlug === slug);
       const hits = searchBm25(searchQuestion, createBm25Index(own), 2).map(r => r.chunk);
       return hits.length ? hits : expansionSections(own, history).slice(0, 2);
     })
-    : broadExpansion ? expansionSections(candidates, history) : (detail ? focused : searchBm25(searchQuestion, index, 8)).map(r => r.chunk);
-  const unique = ranked.filter((chunk, i, all) => all.findIndex(c => fingerprint(c.text) === fingerprint(chunk.text)) === i).slice(0, slugs.size > 1 ? 2 * slugs.size : broadExpansion ? 6 : 4);
+    : broadExpansion ? expanded : (detail ? focused : searchBm25(searchQuestion, index, 8)).map(r => r.chunk);
+  const unique = ranked.filter((chunk, i, all) => all.findIndex(c => fingerprint(c.text) === fingerprint(chunk.text)) === i).slice(0, slugs.size > 1 ? 2 * slugs.size : simple ? 2 : workflow ? 4 : broadExpansion ? 6 : 4);
   const extras = evidenceDocs(unique, approved);
   const docs: Doc[] = [];
   let used = 0;

@@ -33,7 +33,7 @@ It catalogues **17 projects** (including ongoing sim-to-real RL research, publis
 An integrated assistant designed with zero-tolerance hallucination boundaries:
 - **Dual-Mode Retrieval**: Fast keyword, alias, and intent-weighted scoring over verified site corpus (`src/data/site.ts`) and resume markdown (`content/resume.md`).
 - **Multi-Provider Fallback Chain**: Orchestrates queries across **Groq** (`openai/gpt-oss-120b`, `openai/gpt-oss-20b`, `qwen/qwen3.8-27b`) and **Google Gemini** (`gemini-3.8-flash`), with automatic token failover.
-- **Deterministic Hallucination Guards**: Regex verification that scans every generated token against context facts. If the LLM invents ungrounded numbers, metrics, or publication claims, it is automatically intercepted and superseded by a deterministic extractive answer.
+- **Source Checks**: Generated paragraphs require exact source IDs and pass checks for citation coverage, supported numbers, URLs and protected claims. Failed drafts get one bounded rewrite, then a clear retry state with source links. Raw repository excerpts are not substituted as the assistant's answer.
 - **Interactive Citation Chips**: Every assistant answer generates clickable citation tags (`[VeraScan ↗]`, `[RAI-Axiom ↗]`) that smoothly scroll to and trigger visual spotlights on the matching card.
 - **Pronoun & Multi-Turn Context**: Resolves follow-up queries (*"What stack does it use?"*, *"Is there a live demo?"*) using conversation history.
 
@@ -127,7 +127,7 @@ npm install
 ```
 
 ### 3. Configure Environment Variables (Optional)
-The portfolio runs completely offline out of the box using deterministic extractive answers. To enable the online multi-model LLM chat assistant, create a `.env.local` file:
+The portfolio and its evidence links work without a model key. Conversational answers use retrieval followed by model generation; if the model is unavailable, the assistant shows a retry state and source links. To enable the multi-model LLM chat assistant, create a `.env.local` file:
 
 ```bash
 cp .env.example .env.local
@@ -150,11 +150,15 @@ GEMINI_MODEL=gemini-3.8-flash
 
 Keys stay in `.env.local` (ignored by Git), or in your hosting environment. Do not use `NEXT_PUBLIC_` variables. Restart the server after changing keys. There is no public key-entry or key-saving endpoint.
 
-The assistant prefers Groq: the configured model tries `GROQ_API_KEY`, then optional `GROQ_API_KEY_2`, followed by `openai/gpt-oss-20b` with the same key order. Healthy primary requests do not use the second key. Blank/duplicate keys are ignored; authentication failures skip only the rejected key for that request. Each provider pass retains its 12-second total budget (two-key Groq attempts have a 3-second individual timeout); generation and at most one source-validation rewrite share a 16-second deadline. Existing Gemini and OpenRouter configurations remain optional fallbacks. If generation is unavailable or fails source validation, the assistant returns source excerpts with clickable citations and labels the fallback honestly. Each generated reply displays the provider and model actually used, never the key.
+The assistant prefers Groq: the configured model tries `GROQ_API_KEY`, then optional `GROQ_API_KEY_2`, followed by `openai/gpt-oss-20b` with the same key order. Healthy primary requests do not use the second key. Blank/duplicate keys are ignored; authentication failures skip only the rejected key for that request. Each provider pass retains its 12-second total budget (two-key Groq attempts have a 3-second individual timeout); generation and at most one source-validation rewrite share a 16-second deadline. Existing Gemini and OpenRouter configurations remain optional fallbacks. If generation is unavailable or fails source validation, it displays a clear retry state with the retrieved source links. Each generated RAG reply displays the provider and model actually used, never the key.
 
 Two keys in the same Groq organization share its quota; adding a key does not increase organization limits. See [Groq rate limits](https://console.groq.com/docs/rate-limits). Enter the second key directly in `.env.local` or your hosting environment, never in a public form or chat.
 
 Requests for more detail retrieve diverse implementation sections, carrying the project forward from conversation history and preferring sections not already cited. Groq returns structured paragraphs with explicit source IDs; the server validates the claims and IDs before rendering citations. Run `npm run test:details` against a running server with a valid Groq configuration to reproduce the two-turn VeraScan detail regression using the live API.
+
+“How does it work?” retrieves a workflow with implementation/output sections; “I didn't understand” rephrases the active subject in everyday language. The visitor's most recent explicit subject can recover from an older mistaken assistant citation. A context-free clarification asks which subject the visitor means. Limitations are retrieved/discussed only on request; quoted benchmark claims retain their essential qualifications. Default follow-up prompts emphasize understanding and trying the work. Questions about the assistant's provider use current server configuration instead of searching project descriptions.
+
+`node scripts/assistant-understanding-e2e.mjs` reproduces the exact three-turn VeraScan complaint against a running Groq-backed server, plus explicit limitations, identity and clarification checks.
 
 ### 4. Run the Development Server
 ```bash

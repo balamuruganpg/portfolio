@@ -50,17 +50,22 @@ export interface Retrieval {
   scores: number[];
   aliasHit: boolean;
   offTopic: boolean;
+  needsClarification?: boolean;
 }
 
 export const MIN_SCORE = 4;
 
+/** Explicit project identities, excluding generic technology/category aliases. */
+export function namedProjects(query: string, corpus: Doc[]): Doc[] {
+  const q = query.toLowerCase();
+  return corpus.filter((d) => d.project && [d.project.name, d.project.slug, ...d.project.aliases.filter(a => a.length >= 6 && !/^(python|research|routing|fallback|playwright|reinforcement learning|portfolio allocation|contamination|benchmark|train\/eval|stock|finance|telegram)$/.test(a))]
+    .some(a => new RegExp(`(^|[^a-z0-9])${a.toLowerCase().replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}([^a-z0-9]|$)`).test(q)));
+}
+
 export function retrieve(query: string, corpus: Doc[], k = 6): Retrieval {
   const q = query.toLowerCase();
   const qTokens = tokenize(query);
-  // Explicit names beat broad intent boosts. Never blend another project's
-  // numbers into a question about a named system.
-  const named = corpus.filter((d) => d.project && [d.project.name, d.project.slug, ...d.project.aliases.filter(a => a.length >= 6 && !/^(python|research|routing|fallback|playwright|reinforcement learning|portfolio allocation|contamination|benchmark|train\/eval|stock|finance|telegram)$/.test(a))]
-    .some(a => new RegExp(`(^|[^a-z0-9])${a.toLowerCase().replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}([^a-z0-9]|$)`).test(q)));
+  const named = namedProjects(query, corpus);
   const personalDSA = (/\b(dsa|problems? (?:has |have )?(?:he |you )?solved|how many leetcode|personal leetcode|achievements?|achieved)\b/.test(q) || (/leetcode/.test(q) && /\b(problems?|solved|count)\b/.test(q))) && !/leetcode agent|coding agent/.test(q);
   if (personalDSA) {
     const docs = corpus.filter(d => d.section === "achievements");

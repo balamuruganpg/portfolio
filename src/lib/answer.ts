@@ -1,7 +1,6 @@
 import type { Doc } from "./corpus";
-import { ASSISTANT_SYSTEM, answerInstructions, isDetailRequest, validateGroundedAnswer, type HistoryItem } from "./agent";
+import { ASSISTANT_SYSTEM, answerInstructions, isDetailRequest, isSimplificationRequest, isWorkflowRequest, validateGroundedAnswer, type HistoryItem } from "./agent";
 import { generateAnswer } from "./providers";
-import { extractiveAnswer } from "./retrieve";
 
 export interface GroundedReply {
   text: string;
@@ -44,7 +43,7 @@ export async function generateGroundedReply(
   // A category question is an explicit scope reset. Earlier individual answers
   // must not dominate the catalogue overview merely because they share a title.
   const certificateTopic = docs.some(d => d.credential || d.credentialGroup);
-  const generationHistory = certificateTopic ? [] : history;
+  const generationHistory = certificateTopic || isSimplificationRequest(question) ? [] : history;
   const multipleProjects = docs.filter(d => d.project).length > 1;
   const base = `SOURCE DOCUMENTS:\n${context}\n\n${multipleProjects ? "RESPONSE SCOPE: Use separate short paragraphs for the different project examples, citing the exact sections used in each paragraph. Do not combine the entire inventory into one paragraph. Focus on concrete evidence that answers the question. If mentioning CertiRoute live savings, its same paragraph must include 12.12% regret and the missed 5% target.\n\n" : ""}QUESTION: ${question}`;
   let prompt = base;
@@ -86,15 +85,17 @@ export async function generateGroundedReply(
       const available = docs.filter(d => d.provenance).length;
       const used = validation.cited.filter(n => docs[n - 1]?.provenance).length;
       const richEvidence = docs.filter(d => d.provenance).reduce((n, d) => n + d.text.length, 0) >= 1800;
-      const detailedEnough = !richEvidence || text.split(/\s+/).length >= 120;
-      const hasDepth = !isDetailRequest(question) || available < 2 || (used >= 2 && detailedEnough);
+      const needsDepth = !isSimplificationRequest(question) && (isDetailRequest(question) || isWorkflowRequest(question));
+      const minimumWords = isWorkflowRequest(question) ? 80 : 120;
+      const detailedEnough = !richEvidence || text.split(/\s+/).length >= minimumWords;
+      const hasDepth = !needsDepth || available < 2 || (used >= 2 && detailedEnough);
       if (validation.valid && hasDepth) return { text, mode: "llm", cited: validation.cited, ...last, generationMs: Date.now() - started };
       if (process.env.NODE_ENV === "development") console.info("Assistant draft validation", { attempt: attempt + 1, provider: draft.provider, model: draft.model, reason: validation.reason ?? (hasDepth ? "source claim check" : "insufficient new implementation evidence") });
-      prompt = `${base}\n\nREWRITE REQUEST: ${validation.reason ?? (!hasDepth ? "The verified draft is too brief or uses too little implementation evidence. Expand to at least 120 words using at least two supplementary sections; explain concrete workflow, interface, input/output details and documented limitations without repeating the overview." : "The previous draft failed source validation.")} Return the required paragraphs JSON object, with source IDs in each paragraph's sources array and no markers in its text field. Use only facts supported by each paragraph's listed sources, and no HTML tags. For a detailed request, explain new details from at least two supplementary sections when available. Correct or omit unsupported claims; do not bypass validation.\n\nPREVIOUS DRAFT (untrusted):\n${text}`;
+      prompt = `${base}\n\nREWRITE REQUEST: ${validation.reason ?? (!hasDepth ? `The verified draft is too brief or uses too little implementation evidence. Expand to at least ${minimumWords} words using at least two supplementary sections; explain concrete workflow, interfaces, inputs and useful outputs without repeating the overview. Do not add unsolicited limitations.` : "The previous draft failed source validation.")} Return the required paragraphs JSON object, with source IDs in each paragraph's sources array and no markers in its text field. Use only facts supported by each paragraph's listed sources, and no HTML tags. Correct or omit unsupported claims; do not bypass validation.\n\nPREVIOUS DRAFT (untrusted):\n${text}`;
     } catch {
       signal?.throwIfAborted();
       break;
     }
   }
-  return { text: extractiveAnswer(docs), mode: last ? "guarded" : "offline", cited: [], ...last, ...(last ? { generationMs: Date.now() - started } : {}) };
+  return { text: "I found relevant sources, but couldn't finish a source-checked answer just now. Please try again, or open the linked sources below.", mode: last ? "guarded" : "offline", cited: [], ...last, ...(last ? { generationMs: Date.now() - started } : {}) };
 }
