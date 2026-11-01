@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useState } from "react";
 import { certifications, profile, projects } from "@/data/site";
 import { AskButton, Ext } from "./ui";
+import { HeroParticles } from "./BackgroundMotion";
 import { onSpot } from "./motion";
 
 const proof = [
@@ -21,6 +22,7 @@ export default function Hero() {
   return <section id="top" aria-labelledby="hero-title" className="hero-stage relative overflow-hidden border-b border-line pt-32 pb-10 md:pt-44 md:pb-14">
     <div className="pointer-events-none absolute inset-0 grid-bg opacity-30" aria-hidden="true" />
     <div aria-hidden="true" className="hero-ambient pointer-events-none absolute -top-40 right-0 h-[700px] w-[700px] rounded-full" />
+    <HeroParticles />
     <div className="relative mx-auto max-w-6xl px-5">
       <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-10">
         <div className="lg:col-span-7">

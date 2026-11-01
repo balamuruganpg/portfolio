@@ -1,0 +1,13 @@
+## Experience
+AI/ML Intern May 2026 – Aug 2026
+Neo Zeno Talent (Remote)
+–Gaining practical experience in Artificial Intelligence and Machine Learning through guided projects and assignments.
+–Worked with Python, Pandas, NumPy, and Scikit-learn for data preprocessing and basic machine learning tasks.
+–Learned model training, evaluation, and data analysis techniques using real-world datasets.
+–Collaborated remotely with mentors and team members while improving technical and problem-solving skills.
+Automotive AI Innovation InternMar 2026 – Apr 2026
+Yuva Intern (Remote)
+–Completed an introductory internship focused on AI applications in the automotive domain.
+–Learned the fundamentals of Machine Learning, data preprocessing, and predictive analytics.
+–Worked on basic AI/ML tasks and gained hands-on experience with Python-based tools.
+–Participated in remote project activities and technical discussions with mentors.

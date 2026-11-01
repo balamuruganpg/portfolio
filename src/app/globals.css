@@ -354,3 +354,15 @@ html.light .skip-link { color: var(--color-ink); }
   .hero-enter { animation: none !important; opacity: 1; transform: none; }
   .orbit-path, .hero-ambient { animation: none !important; }
 }
+
+/* Background motion: existing palette, quiet at rest, responsive on hover. */
+.ambient-mesh { opacity: .08; background-image: radial-gradient(var(--color-muted) .6px, transparent .6px); background-size: 32px 32px; mask-image: radial-gradient(ellipse at 50% 45%, black, transparent 80%); }
+.ambient-orb { position: absolute; width: 65vw; height: 65vw; max-width: 850px; max-height: 850px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--color-accent) 6%, transparent), transparent 65%); animation: ambient-orbit 30s ease-in-out infinite alternate; will-change: transform; }
+.ambient-orb-one { top: 5%; left: -30%; }
+.ambient-orb-two { right: -30%; bottom: -25%; animation-delay: -15s; animation-direction: alternate-reverse; }
+.ambient-pointer { width: 640px; height: 640px; opacity: 0; background: radial-gradient(circle, color-mix(in srgb, var(--color-accent) 8%, transparent), transparent 65%); transform: translate3d(calc(var(--pointer-x, -1000px) - 320px), calc(var(--pointer-y, -1000px) - 320px), 0); transition: opacity .5s ease; }
+.ambient-background[data-hover="true"] .ambient-pointer { opacity: 1; }
+.ambient-background[data-paused="true"] .ambient-orb { animation-play-state: paused; }
+@keyframes ambient-orbit { to { transform: translate3d(16%, -12%, 0) scale(1.12); } }
+@media (max-width: 767px) { .ambient-orb { animation-duration: 40s; opacity: .6; } .ambient-pointer { display: none; } }
+@media (prefers-reduced-motion: reduce) { .ambient-orb { animation: none !important; will-change: auto; } .ambient-pointer { display: none; } }

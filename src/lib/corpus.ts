@@ -33,6 +33,16 @@ export interface Doc {
   /** Where the citation chip links to. */
   href: string;
   project?: Project;
+  projectSlug?: string;
+  provenance?: {
+    sourceId: string;
+    kind: string;
+    revision: string;
+    fetchedAt: string;
+    url: string;
+  };
+  /** Approved project facts take precedence over supplemental snapshots. */
+  authorityText?: string;
 }
 
 function projectDoc(p: Project): Doc {

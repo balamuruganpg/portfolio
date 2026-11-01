@@ -137,7 +137,15 @@ export function unsupportedNumbers(answer: string, context: string): string[] {
     .replace(/(?:^|\n|\s)(?:\d{1,2}[.)]|\(\d{1,2}\))\s+/g, " ");
 
   const norm = (s: string) => {
-    const raw = (s.replace(/(\d)[\s\u00a0\u202f]+%/g, "$1%").match(/\d+(?:[.,]\d+)*%?/g) ?? []).map((n) => n.replace(/,/g, ""));
+    const cardinal: Record<string, string> = { zero: "0", one: "1", two: "2", three: "3", four: "4", five: "5", six: "6", seven: "7", eight: "8", nine: "9", ten: "10", eleven: "11", twelve: "12" };
+    const normalized = s.replace(/https?:\/\/[^\s<>]+/g, "")
+      .replace(/\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b(?=\s+(?:[a-z-]+\s+){0,2}(?:checks?|modes?|classes|tests?|providers?|workers?|universes?|seeds?|certifications?|problems?|percent)\b)/gi, word => cardinal[word.toLowerCase()])
+      .replace(/(\d+(?:\.\d+)?)\s+(?:per\s*cent|percent)\b/gi, "$1%")
+      .replace(/(\d)[\s\u00a0\u202f]+%/g, "$1%");
+    const raw = (normalized.match(/\d+(?:[.,]\d+)*%?/g) ?? []).map((n) => n.replace(/,/g, ""));
+    // A percentage range shares its unit with both endpoints; a bare count
+    // never grants permission to turn that count into a percentage.
+    for (const range of normalized.matchAll(/(\d+(?:\.\d+)?)\s*[-–—]\s*(\d+(?:\.\d+)?)%/g)) raw.push(`${range[1]}%`);
     const set = new Set<string>();
     for (const n of raw) {
       set.add(n);
@@ -148,7 +156,6 @@ export function unsupportedNumbers(answer: string, context: string): string[] {
   const ctx = new Set(norm(context));
   return [...new Set(norm(cleaned))].filter((n) => {
     if (ctx.has(n)) return false;
-    if (n.endsWith("%") && ctx.has(n.slice(0, -1))) return false;
     return true;
   });
 }

@@ -255,3 +255,19 @@ PASS  no console errors
 ## 📄 License
 
 This project is open-source and available under the [MIT License](LICENSE).
+
+## Separate RAG knowledge base
+
+The assistant retrieves from approved site facts plus a server-only source index in `content/rag/`. The snapshot includes all 17 listed repositories at immutable commits, selected architecture/evaluation docs, resume passages, GitHub profile metadata and VeraScan package documentation. BM25 with heading weighting and query expansion ranks passages; it requires no embeddings or vector database. Imported sources never automatically change public page claims.
+
+```bash
+npm run rag:sync       # refresh allowlisted source snapshots (owner-run, network)
+npm run rag:rebuild    # rebuild saved snapshots (no network)
+npm run rag:verify     # check hashes, reproducibility and repository coverage
+npm run test:rag       # deterministic retrieval/source-policy tests
+npm run test:guardrails:e2e  # adversarial API checks against a running server
+```
+
+Chat requests never crawl visitor-supplied URLs. GitHub citations point to original file lines at a saved commit. Unmatched metrics and suspicious source sections are excluded; keys stay server-side and credential-shaped strings are redacted before snapshots are stored.
+
+LinkedIn blocks public retrieval for the exact profile (HTTP 999). The assistant discloses that gap. The owner can supply profile text using the format in `content/rag/imports/README.md`.

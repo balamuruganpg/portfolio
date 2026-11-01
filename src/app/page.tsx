@@ -4,6 +4,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import Assistant from "@/components/Assistant";
 import CommandPalette from "@/components/CommandPalette";
+import BackgroundMotion from "@/components/BackgroundMotion";
 import About from "@/components/About";
 import Hero from "@/components/Hero";
 import Nav from "@/components/Nav";
@@ -64,9 +65,10 @@ function SectionHead({
 export default function Home() {
   return (
     <div className="relative min-h-screen bg-bg text-ink selection:bg-accent selection:text-bg">
+      <BackgroundMotion />
       <Nav />
 
-      <main id="main-content">
+      <main id="main-content" className="relative z-10">
         {/* HERO SECTION */}
         <Hero />
 
@@ -380,21 +382,21 @@ export default function Home() {
                   step: "01",
                   title: "Retrieve",
                   detail:
-                    "Keyword and sectional token matching across the project records, experience, education and resume text. Out-of-domain queries are rejected instantly.",
-                  tag: "Deterministic Corpus",
+                    "BM25 retrieval across versioned GitHub documentation, selected resume passages and package documentation, anchored to the approved portfolio facts. Out-of-scope and private-configuration requests are refused.",
+                  tag: "Versioned Evidence",
                 },
                 {
                   step: "02",
                   title: "Cite",
                   detail:
-                    "Every matched document produces interactive citation chips. Users can click any citation chip to scroll directly to the corresponding card on this page.",
+                    "Answers link to the corresponding portfolio card or the original source: an immutable repository revision, a resume page or package documentation. Source coverage and unavailable profiles are disclosed.",
                   tag: "Bidirectional Grounding",
                 },
                 {
                   step: "03",
                   title: "Generate & Guard",
                   detail:
-                    "Single LLM call bounded to context. An anti-hallucination guard rejects any output introducing numbers or academic claims not found verbatim in source docs.",
+                    "Generation stays inside the retrieved context. Citation, URL, numeric-unit and claim checks reject unsupported output; the assistant falls back to original cited facts when a check fails.",
                   tag: "Source Guard",
                 },
               ].map((item, i) => (
@@ -448,7 +450,7 @@ export default function Home() {
       </main>
 
       {/* FOOTER & CONTACT */}
-      <footer id="contact" aria-labelledby="contact-title" className="border-t border-line/80 bg-surface/30">
+      <footer id="contact" aria-labelledby="contact-title" className="relative z-10 border-t border-line/80 bg-surface/30">
         <div className="mx-auto max-w-6xl px-5 py-16">
           <p className="label text-accent">Let’s connect</p>
           <h2 id="contact-title" className="mt-3 mb-10 text-3xl font-semibold tracking-tight md:text-4xl">Have an AI/ML role in mind?</h2>

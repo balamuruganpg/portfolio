@@ -10,11 +10,11 @@ interface Msg {
   role: "user" | "assistant";
   text: string;
   citations?: Citation[];
-  mode?: "llm" | "offline" | "guarded" | "refused" | "error" | "greeting" | "cancelled";
+  mode?: "llm" | "offline" | "guarded" | "refused" | "error" | "greeting" | "cancelled" | "source-unavailable";
   note?: string;
   suggestions?: string[];
 }
-const modes: Record<string, string> = { llm: "Source-checked answer", offline: "Original portfolio facts", guarded: "Original facts · generated answer withheld", refused: "Outside portfolio scope", greeting: "Ready to explore", cancelled: "Stopped", error: "Request interrupted" };
+const modes: Record<string, string> = { llm: "Source-checked answer", offline: "Original portfolio facts", guarded: "Original facts · generated answer withheld", refused: "Outside portfolio scope", greeting: "Ready to explore", cancelled: "Stopped", "source-unavailable": "Source unavailable · verified profile link", error: "Request interrupted" };
 
 export default function Assistant() {
   const reduce = useReducedMotion();
@@ -23,6 +23,8 @@ export default function Assistant() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [provider, setProvider] = useState<string | null>(null);
+  const [knowledge, setKnowledge] = useState<{ sourceCount: number; repositoryCount: number; chunkCount: number; updatedAt?: string; unavailable?: { title: string; status: string }[] } | null>(null);
+  const [showSources, setShowSources] = useState(false);
   const [copied, setCopied] = useState<number | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
@@ -36,7 +38,7 @@ export default function Assistant() {
   useEffect(() => {
     // Retire the old browser key flow; credentials belong only on the server.
     try { localStorage.removeItem("portfolio_gemini_key"); } catch {}
-    fetch("/api/chat").then(r => r.json()).then(d => setProvider(d.hasKey ? d.provider : null)).catch(() => {});
+    fetch("/api/chat").then(r => r.json()).then(d => {setProvider(d.hasKey ? d.provider : null);if(d.knowledge)setKnowledge(d.knowledge);}).catch(() => {});
     return () => controller.current?.abort();
   }, []);
 
@@ -93,7 +95,7 @@ export default function Assistant() {
   const answerBody = (message: Msg) => message.text.split(/(\[\d+\])/g).map((part, i) => {
     const number = part.match(/^\[(\d+)\]$/)?.[1];
     const citation = number && message.citations?.find(c => c.index === Number(number));
-    return citation ? <a key={i} href={citation.href} onClick={e => cite(citation, e)} aria-label={`Source ${number}: ${citation.label}`} className="mx-0.5 inline-flex rounded border border-accent/30 px-1 font-mono text-xs text-accent hover:bg-accent/10">{number}</a> : part;
+    return citation ? <a key={i} href={citation.href} target={citation.href.startsWith("https:") ? "_blank" : undefined} rel={citation.href.startsWith("https:") ? "noopener noreferrer" : undefined} onClick={e => cite(citation, e)} aria-label={`Source ${number}: ${citation.label}`} className="mx-0.5 inline-flex rounded border border-accent/30 px-1 font-mono text-xs text-accent hover:bg-accent/10">{number}</a> : part;
   });
   const lastAnswer = [...msgs].reverse().find(m => m.role === "assistant");
   const suggestions = lastAnswer?.suggestions ?? STARTER_QUESTIONS;
@@ -110,7 +112,9 @@ export default function Assistant() {
             <div className="flex items-center gap-3"><span aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 font-mono text-xs text-accent">BPG</span><div><h2 className="text-sm font-semibold">Portfolio Assistant</h2><p className="mt-0.5 font-mono text-[10px] text-muted">{provider ? `${provider} configured · evidence checked` : "Evidence mode · no model required"}</p></div></div>
             <div className="flex items-center gap-1"><button type="button" disabled={busy || !msgs.length} onClick={() => {setMsgs([]);setInput("");inputRef.current?.focus();}} aria-label="Clear conversation" title="New conversation" className="rounded-lg p-2 text-muted hover:bg-raised disabled:opacity-30">↺</button><button type="button" onClick={() => setOpen(false)} aria-label="Close assistant" className="rounded-lg p-2 text-muted hover:bg-raised">✕</button></div>
           </div>
-          <p className="mt-3 text-xs text-muted">Grounded on this site, not the open web.</p>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2"><p className="text-xs text-muted">Grounded on this site, not the open web.</p>{knowledge && <button type="button" onClick={()=>setShowSources(v=>!v)} aria-expanded={showSources} aria-controls="assistant-source-coverage" className="rounded px-2 py-1 font-mono text-[10px] text-accent hover:bg-raised">{knowledge.sourceCount} sources {showSources?"−":"+"}</button>}</div>
+          {showSources && knowledge && <div id="assistant-source-coverage" className="mt-3 rounded-xl border border-line bg-bg/50 p-3 text-xs leading-relaxed text-muted"><p>{knowledge.repositoryCount} repositories · {knowledge.chunkCount} indexed passages</p><p className="mt-1">Approved facts + versioned GitHub docs, resume and package documentation. Sources are refreshed by the owner; answers do not browse the web.</p>{knowledge.updatedAt&&<p className="mt-2 font-mono text-[10px]">Snapshot: {new Date(knowledge.updatedAt).toLocaleDateString("en-IN",{timeZone:"Asia/Kolkata"})}</p>}{knowledge.unavailable?.map(s=><p key={s.title} className="mt-1">{s.title}: {s.status}. No content inferred.</p>)}</div>}
+
         </header>
         <div ref={listRef} role="log" aria-label="Conversation" aria-live="polite" aria-relevant="additions" aria-busy={busy} className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-5">
           {!msgs.length && <div><p className="label text-accent">Meet the work behind the claims</p><h3 className="mt-3 text-2xl font-semibold tracking-tight">What would you like to explore?</h3><p className="mt-3 text-sm leading-relaxed text-muted">Ask about a project, compare the results, or explore Balamurugan’s experience. Every factual answer links back to this portfolio.</p><div className="mt-5 grid gap-2">{STARTER_QUESTIONS.map((q,i) => <button key={q} type="button" onClick={() => ask(q)} className="group flex items-center justify-between rounded-xl border border-line bg-raised/40 px-4 py-3 text-left text-sm transition hover:border-accent/40 hover:bg-raised"><span><span aria-hidden="true" className="mr-3 font-mono text-xs text-accent">0{i+1}</span>{q}</span><span aria-hidden="true" className="text-accent transition group-hover:translate-x-1">↗</span></button>)}</div><p className="mt-5 text-xs leading-relaxed text-muted">I’ll say when something isn’t documented. If a model is unavailable, you’ll still get the original facts with citations.</p></div>}
@@ -118,7 +122,7 @@ export default function Assistant() {
             {message.role === "user" ? message.text : <>
               {message.note && <p className="rounded-lg border border-line bg-raised/50 px-3 py-2 text-xs leading-relaxed text-muted">{message.note}</p>}
               <div className="whitespace-pre-wrap break-words text-sm leading-7 text-ink">{answerBody(message)}</div>
-              {!!message.citations?.length && <div data-testid="citations"><p className="label mb-2 !text-[10px]">Sources on this page</p><div className="flex flex-wrap gap-2">{message.citations.map(c => <a key={`${c.href}-${c.index}`} href={c.href} onClick={e=>cite(c,e)} data-citation={c.label} className="rounded-lg border border-accent/30 bg-accent/5 px-2.5 py-1.5 text-xs text-accent hover:bg-accent/15">{c.label} ↗</a>)}</div></div>}
+              {!!message.citations?.length && <div data-testid="citations"><p className="label mb-2 !text-[10px]">Sources on this page</p><div className="flex flex-wrap gap-2">{message.citations.map(c => <a key={`${c.href}-${c.index}`} href={c.href} target={c.href.startsWith("https:") ? "_blank" : undefined} rel={c.href.startsWith("https:") ? "noopener noreferrer" : undefined} onClick={e=>cite(c,e)} data-citation={c.label} className="rounded-lg border border-accent/30 bg-accent/5 px-2.5 py-1.5 text-xs text-accent hover:bg-accent/15">{c.label} ↗</a>)}</div></div>}
               <div className="flex items-center justify-between gap-3"><span className="font-mono text-[10px] text-muted">{modes[message.mode ?? ""]}</span><button type="button" aria-label="Copy answer" onClick={async()=>{try{await navigator.clipboard.writeText(message.text.replace(/\[\d+\]/g,""));setCopied(i);setTimeout(()=>setCopied(null),1800);}catch{setCopied(null);}}} className="shrink-0 rounded px-2 py-1 text-xs text-muted hover:bg-raised">{copied===i?"Copied ✓":"Copy"}</button></div>
               {message.mode === "error" && lastQuestion && <button type="button" disabled={busy} onClick={()=>ask(lastQuestion)} aria-label="Try again" className="link text-sm text-accent">Try again ↗</button>}
             </>}

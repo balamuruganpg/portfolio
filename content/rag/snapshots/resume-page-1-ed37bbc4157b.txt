@@ -1,0 +1,11 @@
+## Career Objective
+AI/ML Engineer who builds and deploys grounded, auditable Generative AI and multi-agent systems that reduce model risk.
+Built a page-cited IPO research agent, a deployed chest X-ray classifier with Grad-CAM explainability, and VeraScan, an
+open-source contamination-detection library on PyPI, so teams get evidence-based AI instead of black-box experiments.
+## Skills
+Programming:Python, SQL, C, Julia
+Generative AI:LLMs, LangChain, LangGraph, LlamaIndex, RAG, Multi-Agent Systems, Prompt Engineering, Vector
+Databases, Hugging Face
+AI/ML:Machine Learning, Deep Learning, PyTorch, TensorFlow, Scikit-learn, Pandas, NumPy
+Backend:FastAPI, Streamlit, REST APIs, Pydantic, React, Supabase
+Cloud & Tools:Docker, Git, Linux, AWS, Google Cloud, Oracle Cloud, PostgreSQL, FAISS, pytest

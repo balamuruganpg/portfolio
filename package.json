@@ -8,7 +8,12 @@
     "start": "next start",
     "test:e2e": "node scripts/e2e.mjs",
     "test:assistant": "node scripts/assistant-test.mjs",
-    "test:guards": "node --experimental-strip-types scripts/guard-test.mts"
+    "test:guards": "node --experimental-strip-types scripts/guard-test.mts",
+    "rag:sync": "node scripts/rag-sync.mjs",
+    "rag:verify": "node scripts/rag-verify.mjs",
+    "test:rag": "node scripts/rag-test.mjs",
+    "test:guardrails:e2e": "node scripts/guardrails-e2e.mjs",
+    "rag:rebuild": "node scripts/rag-verify.mjs --rebuild"
   },
   "dependencies": {
     "framer-motion": "^14.0.0",
