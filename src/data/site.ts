@@ -363,11 +363,12 @@ export const projects: Project[] = [
     slug: "signal",
     name: "Signal",
     repo: "https://github.com/balamuruganpg/cloud-sla-monitoring-system-ccv-mini-project",
+    live: "https://cloud-sla-monitoring-system.streamlit.app/",
     tag: "Course",
     featured: false,
     categories: [],
     summary:
-      "Streamlit Cloud SLA monitor for U23CS702 with seeded simulation and optional read-only Google Cloud Monitoring. Tracks four SLA metrics: uptime, latency, error rate, and availability across light and black themes. Course project; GitHub only, no live URL.",
+      "Streamlit Cloud SLA monitor for U23CS702 with seeded simulation and optional read-only Google Cloud Monitoring. Tracks four SLA metrics: uptime, latency, error rate, and availability across light and black themes. Course project with a live Streamlit app.",
     stack: [
       "Streamlit",
       "Python",
@@ -381,6 +382,8 @@ export const projects: Project[] = [
       "u23cs702",
       "cloud-sla",
       "cloud sla monitoring system",
+      "mini project",
+      "ccv mini project",
       "sla",
       "uptime",
       "latency",

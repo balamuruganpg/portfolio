@@ -99,6 +99,7 @@ await clickExternal(page.locator('article a[data-kind="repo"][href*="axiom-sim2r
 await clickExternal(page.locator('a[data-kind="repo"][href$="/cloud-sla-monitoring-system-ccv-mini-project"]').first(), "repo Signal", "github.com/balamuruganpg/cloud-sla-monitoring-system-ccv-mini-project");
 await clickExternal(page.locator('a[data-kind="live"][href="https://medrag.in"]').first(), "live LungScan (medrag.in)", "medrag.in");
 await clickExternal(page.locator('a[data-kind="live"][href^="https://pneumonia-scan.streamlit.app"]').first(), "live PneumoScan (Streamlit)", "streamlit.app");
+await clickExternal(page.locator('a[data-kind="live"][href="https://cloud-sla-monitoring-system.streamlit.app/"]').first(), "live Signal (Streamlit)", "cloud-sla-monitoring-system.streamlit.app");
 await clickExternal(page.locator('a[data-kind="pypi"]').first(), "PyPI verascan", "pypi.org/project/verascan");
 
 // --- command palette: Ctrl+K → jump to project
@@ -139,7 +140,7 @@ ok("VeraScan answer does not invent a paper", !/\b(paper|arxiv|publication|journ
 ok("VeraScan answer mentions PyPI", /pypi|pip install/i.test(v.text));
 
 const live = await askAssistant("Which projects are live?");
-ok("live question cites LungScan AI + PneumoScan", live.cites.includes("LungScan AI") && live.cites.includes("PneumoScan"), `citations: ${live.cites.join(", ")}`);
+ok("live question cites LungScan AI + PneumoScan + Signal", live.cites.includes("LungScan AI") && live.cites.includes("PneumoScan") && live.cites.includes("Signal"), `citations: ${live.cites.join(", ")}`);
 
 const stack = await askAssistant("What stack for LungScan?");
 ok("LungScan stack cites LungScan AI only", stack.cites[0] === "LungScan AI", `citations: ${stack.cites.join(", ")}`);
@@ -182,7 +183,14 @@ const sig = await askAssistant("What is Signal?");
 console.log("\n--- Assistant answer: What is Signal? ---\n" + sig.text + "\n---\n");
 ok("Signal answer cites Signal", sig.cites.includes("Signal"), `citations: ${sig.cites.join(", ")}`);
 ok("Signal mentions SLA or U23CS702 or Streamlit", /sla|u23cs702|streamlit/i.test(sig.text), sig.text);
-ok("Signal does not invent a live URL", !/https?:\/\/(?!github\.com)/i.test(sig.text));
+const signalUrls = sig.text.match(/https?:\/\/[^\s<>"'\])]+/g) || [];
+const normalizeSignalUrl = url => url.replace(/[.,;:!?]+$/, "").replace(/\/+$/, "");
+const signalRepository = "https://github.com/balamuruganpg/cloud-sla-monitoring-system-ccv-mini-project";
+const signalDestinations = new Set([signalRepository, "https://cloud-sla-monitoring-system.streamlit.app/"].map(normalizeSignalUrl));
+ok("Signal links stay within the verified repository and live app", signalUrls.every(raw => {
+  const url = normalizeSignalUrl(raw);
+  return signalDestinations.has(url) || url.startsWith(`${signalRepository}/blob/`);
+}));
 
 // citation chip jumps to CertiRoute and Signal
 await page.locator('[data-testid="assistant-answer"]').last().locator('[data-citation="Signal"]').click();

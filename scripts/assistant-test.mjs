@@ -53,7 +53,15 @@ try {
     await check("small unsupported numbers are rejected", () => assert.deepEqual(unsupportedNumbers("It has 3 checks.", "It has 4 checks."), ["3"]));
     await check("Unicode spaced percentages are normalized", () => assert.deepEqual(unsupportedNumbers("Savings were 32.77\u202f%.", "Savings 32.77%."), []));
     await check("explicit project stays specific", () => assert.deepEqual(retrieve("What is VeraScan?", docs).docs.map(d => d.id), ["project:verascan"]));
-    await check("live app list excludes prototypes and packages", () => assert.deepEqual(retrieve("Which projects are live?", docs).docs.map(d => d.project?.slug), ["lungscan-ai", "pneumoscan"]));
+    await check("live app list includes Signal and excludes prototypes and packages", () => assert.deepEqual(retrieve("Which projects are live?", docs).docs.map(d => d.project?.slug), ["lungscan-ai", "pneumoscan", "signal"]));
+    await check("the mini project's live answer stays scoped to Signal and its verified URL", () => {
+      const selected = retrieve("Is the mini project live?", docs).docs;
+      assert.deepEqual(selected.map(d => d.id), ["project:signal"]);
+      assert.equal(selected[0].project.live, "https://cloud-sla-monitoring-system.streamlit.app/");
+      assert.doesNotMatch(selected[0].text, /github only|no live (?:url|demo|deployment)/i);
+      assert.equal(validateGroundedAnswer("Signal is live at https://cloud-sla-monitoring-system.streamlit.app/ [1]", selected).valid, true);
+      assert.equal(validateGroundedAnswer("Signal is live at https://signal-unverified.example/ [1]", selected).valid, false);
+    });
     await check("personal LeetCode achievement is distinct from the agent", () => {
       const result = retrieve("How many LeetCode DSA problems has he solved?", docs);
       assert.equal(result.docs[0]?.section, "achievements"); assert.match(result.docs[0]?.text, /330\+/); assert.ok(!result.docs.some(d => d.project));

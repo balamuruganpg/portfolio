@@ -80,7 +80,7 @@ flowchart TD
 
 | Project Name | Category | Primary Stack | Key Highlights |
 | :--- | :--- | :--- | :--- |
-| **Signal** | Course | Streamlit, Python, GCP Monitoring | Cloud SLA monitor for U23CS702 with seeded simulation and 4 SLA metrics across light and dark themes. |
+| **Signal** | Course | Streamlit, Python, GCP Monitoring | Cloud SLA monitor for U23CS702 with seeded simulation and 4 SLA metrics across light and dark themes. [Live app](https://cloud-sla-monitoring-system.streamlit.app/) |
 | **ChurnGuard Pro** | Dashboards | Gradient Boosting, Streamlit | Customer retention analytics trained on 7,043 customer records. |
 | **OncoInsight Pro** | Dashboards | GBR/GBC, Statistics, Streamlit | Cancer telemetry and risk stratification dashboard over 17,686 records. |
 | **Household Power RNN** | Deep Learning | Recurrent Neural Network | Time-series electrical telemetry sequence prediction. |

@@ -39,7 +39,8 @@
 - Project: Signal
 - Tag: Course
 - Repository: https://github.com/balamuruganpg/cloud-sla-monitoring-system-ccv-mini-project
-- Status: Source code on GitHub (no live URL).
+- Status: Live Streamlit app; source code on GitHub.
+- Live app: https://cloud-sla-monitoring-system.streamlit.app/
 - Description: Streamlit Cloud SLA monitor for U23CS702. Seeded simulation, optional read-only Google Cloud Monitoring, four metrics: uptime, latency, error rate, availability. Light and black themes.
 - Stack: Streamlit, Python, Google Cloud Monitoring, SLA Simulation.
 
