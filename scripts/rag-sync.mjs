@@ -27,6 +27,7 @@ async function get(url, json = false) {
   return json ? JSON.parse(text) : text;
 }
 async function store(source, text) {
+  text = text.replace(/\r\n?/g, "\n");
   // Even example credentials in public READMEs are redacted before writing.
   const redactions = [...text.matchAll(/\b(?:gsk_|sk-or-|AIza)[a-z0-9_-]{12,}/gi)].length;
   text = text.replace(/\b(?:gsk_|sk-or-|AIza)[a-z0-9_-]{12,}/gi, "[REDACTED_CREDENTIAL]");

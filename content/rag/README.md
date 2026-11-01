@@ -27,3 +27,5 @@ LinkedIn's exact profile returned HTTP 999. Its content is not indexed, search s
 Credential-shaped strings are redacted before a snapshot is stored; the stored-snapshot SHA-256 covers the sanitized content, and its immutable repository revision records the upstream source.
 
 Source snapshots and hashes are frozen until the owner runs sync/rebuild. No chat message can trigger a URL fetch, follow a link in a README, access local configuration or edit this index. Do not add secrets or private material to snapshots. Keys remain only in the ignored environment configuration.
+
+Snapshot line endings are canonical LF, enforced by .gitattributes. After committing a source refresh, `node scripts/rag-verify.mjs --git` checks that Git stores exactly the bytes covered by each snapshot hash.

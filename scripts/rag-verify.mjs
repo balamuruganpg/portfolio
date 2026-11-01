@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { loadRagRuntime } from "./rag-runtime.mjs";
 
 const root = path.resolve("content/rag");
@@ -16,6 +17,10 @@ try {
     const text=await fs.readFile(file,"utf8");
     assert.ok(!/\b(?:gsk_|sk-or-|AIza)[a-z0-9_-]{12,}/i.test(text),`${source.id}: credential-shaped content must be redacted before storage`);
     assert.equal(crypto.createHash("sha256").update(text).digest("hex"),source.sha256,`${source.id} snapshot hash mismatch`);
+    if(process.argv.includes("--git")) {
+      const committed=execFileSync("git",["show",`HEAD:content/rag/${source.file}`],{maxBuffer:2_000_000});
+      assert.equal(crypto.createHash("sha256").update(committed).digest("hex"),source.sha256,`${source.id} committed snapshot differs from manifest`);
+    }
     const built = runtime.core.buildEvidenceChunks(source,text,runtime.corpus.buildSiteDocs());
     rebuilt.push(...built.chunks); excluded.push(...built.excluded);
   }

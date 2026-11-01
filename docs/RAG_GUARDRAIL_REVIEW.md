@@ -121,4 +121,6 @@ These are tested constraints, not a proof that every possible hallucination or p
 
 ## Saved checkpoints
 
-The approved design checkpoint and backup listed above remain untouched. The completed RAG/background revision is saved locally on `feat/portfolio-overhaul-v2`, with branch `backup/rag-guardrails-2026-11-01`, tag `backup-rag-guardrails-2026-11-01`, and a separate filesystem backup at `A:\balamuruganpg-rag-backup-2026-11-01`. The backup folder’s BACKUP.md records its exact commit and verification count. No push, merge or deployment was performed. LinkedIn ingestion remains pending the owner-provided text.
+The approved design checkpoint and backup listed above remain untouched. The completed RAG/background revision is saved locally on `feat/portfolio-overhaul-v2`, with branch `backup/rag-guardrails-2026-11-01-final`, tag `backup-rag-guardrails-2026-11-01-final`, and a separate filesystem backup at `A:\balamuruganpg-rag-backup-2026-11-01`. The backup folder’s BACKUP.md records its exact commit and verification count. No push, merge or deployment was performed. LinkedIn ingestion remains pending the owner-provided text.
+
+Snapshot files use explicit LF checkout rules so their SHA-256 hashes survive Windows/Linux checkouts. `node scripts/rag-verify.mjs --git` also verifies the committed snapshot bytes against the manifest.

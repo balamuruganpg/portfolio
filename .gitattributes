@@ -1,0 +1,2 @@
+# RAG snapshot hashes must survive checkout on Windows and Linux unchanged.
+content/rag/** text eol=lf
