@@ -1,11 +1,11 @@
 import type { HistoryItem } from "./agent";
 
-export interface ProviderKeys { groqKey?: string; geminiKey?: string; openRouterKey?: string }
+export interface ProviderKeys { groqKey?: string; groqKey2?: string; geminiKey?: string; openRouterKey?: string }
 export function providerKeys(): ProviderKeys {
-  return { groqKey: process.env.GROQ_API_KEY, geminiKey: process.env.GEMINI_API_KEY, openRouterKey: process.env.OPENROUTER_API_KEY };
+  return { groqKey: process.env.GROQ_API_KEY, groqKey2: process.env.GROQ_API_KEY_2, geminiKey: process.env.GEMINI_API_KEY, openRouterKey: process.env.OPENROUTER_API_KEY };
 }
 export function providerStatus(keys = providerKeys()) {
-  if (keys.groqKey) return { hasKey: true, provider: "Groq", model: process.env.GROQ_MODEL || "openai/gpt-oss-120b" };
+  if (keys.groqKey?.trim() || keys.groqKey2?.trim()) return { hasKey: true, provider: "Groq", model: process.env.GROQ_MODEL || "openai/gpt-oss-120b" };
   if (keys.geminiKey) return { hasKey: true, provider: "Gemini", model: process.env.GEMINI_MODEL || "gemini-3.8-flash" };
   if (keys.openRouterKey) return { hasKey: true, provider: "OpenRouter", model: process.env.OPENROUTER_MODEL || "meta-llama/llama-3.3-70b-instruct:free" };
   return { hasKey: false, provider: null, model: null };
@@ -21,20 +21,22 @@ export async function generateAnswer(
   options: { schema?: Record<string, unknown> } = {},
 ): Promise<{ text: string; provider: string; model: string }> {
   const deadline = Date.now() + 12_000;
+  const groqKeys = [...new Set([keys.groqKey, keys.groqKey2].map(key => key?.trim()).filter((key): key is string => !!key))];
   const attempts: { provider: string; model: string; key: string; url: string; gemini?: boolean }[] = [];
-  if (keys.groqKey) {
-    for (const model of new Set([process.env.GROQ_MODEL || "openai/gpt-oss-120b", "openai/gpt-oss-20b"])) attempts.push({ provider: "Groq", model, key: keys.groqKey, url: "https://api.groq.com/openai/v1/chat/completions" });
+  for (const model of new Set([process.env.GROQ_MODEL || "openai/gpt-oss-120b", "openai/gpt-oss-20b"])) {
+    for (const key of groqKeys) attempts.push({ provider: "Groq", model, key, url: "https://api.groq.com/openai/v1/chat/completions" });
   }
   if (keys.geminiKey) attempts.push({ provider: "Gemini", model: process.env.GEMINI_MODEL || "gemini-3.8-flash", key: keys.geminiKey, url: "https://generativelanguage.googleapis.com/v1beta/models/", gemini: true });
   if (keys.openRouterKey) attempts.push({ provider: "OpenRouter", model: process.env.OPENROUTER_MODEL || "meta-llama/llama-3.3-70b-instruct:free", key: keys.openRouterKey, url: "https://openrouter.ai/api/v1/chat/completions" });
   if (!attempts.length) throw new Error("no-key");
-  const blockedProviders = new Set<string>();
+  const blockedKeys = new Set<string>();
   for (const attempt of attempts) {
     signal?.throwIfAborted();
     const remaining = deadline - Date.now();
     if (remaining <= 0) break;
-    if (blockedProviders.has(attempt.provider)) continue;
-    const timeout = AbortSignal.timeout(Math.min(remaining, 6500));
+    const keyIdentity = `${attempt.provider}:${attempt.key}`;
+    if (blockedKeys.has(keyIdentity)) continue;
+    const timeout = AbortSignal.timeout(Math.min(remaining, attempt.provider === "Groq" && groqKeys.length > 1 ? 3000 : 6500));
     const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
     try {
       const response = await request(attempt.gemini ? `${attempt.url}${encodeURIComponent(attempt.model)}:generateContent` : attempt.url, {
@@ -55,9 +57,10 @@ export async function generateAnswer(
         }),
       });
       if (!response.ok) {
-        // Quotas can be model-specific. A throttled primary may still use the
-        // configured secondary model; invalid credentials block the provider.
-        if ([401, 403].includes(response.status)) blockedProviders.add(attempt.provider);
+        // Try the other key before downgrading the model. Invalid credentials
+        // disable only that key for this request, leaving its backup usable.
+        // Keys from one organization still share that organization's quotas.
+        if ([401, 403].includes(response.status)) blockedKeys.add(keyIdentity);
         await response.body?.cancel();
         continue;
       }

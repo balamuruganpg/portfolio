@@ -43,7 +43,7 @@ export function isBlockedQuestion(question: string): boolean {
   // the stricter source-text quarantine unchanged and protect private access.
   const privateContext = /\b(?:private|hidden|secret|server|system|api|access|login|auth|authentication|authorization|passwords?|tokens?|keys?|database|environment|configuration)\b|\.env|process\.env/i.test(text);
   const policyText = privateContext ? text : text.replace(/\bcredentials\b/gi, "certificates");
-  return INJECTION.test(policyText) || /\b(?:fetch|browse|open|visit|request|curl)\b.{0,45}https?:\/\//i.test(text) || /\b(?:process\.env|GROQ_API_KEY|GEMINI_API_KEY|OPENROUTER_API_KEY)\b/i.test(text);
+  return INJECTION.test(policyText) || /\b(?:fetch|browse|open|visit|request|curl)\b.{0,45}https?:\/\//i.test(text) || /\b(?:process\.env|GROQ_API_KEY(?:_2)?|GEMINI_API_KEY|OPENROUTER_API_KEY)\b/i.test(text);
 }
 
 function cleanMarkdown(text: string): string {

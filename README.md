@@ -140,6 +140,8 @@ GEMINI_API_KEY=your_gemini_api_key
 
 # Groq is the preferred provider (optional)
 GROQ_API_KEY=your_groq_api_key
+# Optional second server-side key:
+GROQ_API_KEY_2=your_second_groq_api_key
 GROQ_MODEL=openai/gpt-oss-120b
 
 # Optional model override (defaults to gemini-3.8-flash)
@@ -148,7 +150,9 @@ GEMINI_MODEL=gemini-3.8-flash
 
 Keys stay in `.env.local` (ignored by Git), or in your hosting environment. Do not use `NEXT_PUBLIC_` variables. Restart the server after changing keys. There is no public key-entry or key-saving endpoint.
 
-The assistant prefers Groq (`openai/gpt-oss-120b`, then `openai/gpt-oss-20b`). Each provider pass has a 12-second budget; generation and at most one source-validation rewrite share a 16-second deadline. Existing Gemini and OpenRouter configurations remain optional fallbacks. If generation is unavailable or fails source validation, the assistant returns source excerpts with clickable citations and labels the fallback honestly. Each generated reply displays the provider and model actually used.
+The assistant prefers Groq: the configured model tries `GROQ_API_KEY`, then optional `GROQ_API_KEY_2`, followed by `openai/gpt-oss-20b` with the same key order. Healthy primary requests do not use the second key. Blank/duplicate keys are ignored; authentication failures skip only the rejected key for that request. Each provider pass retains its 12-second total budget (two-key Groq attempts have a 3-second individual timeout); generation and at most one source-validation rewrite share a 16-second deadline. Existing Gemini and OpenRouter configurations remain optional fallbacks. If generation is unavailable or fails source validation, the assistant returns source excerpts with clickable citations and labels the fallback honestly. Each generated reply displays the provider and model actually used, never the key.
+
+Two keys in the same Groq organization share its quota; adding a key does not increase organization limits. See [Groq rate limits](https://console.groq.com/docs/rate-limits). Enter the second key directly in `.env.local` or your hosting environment, never in a public form or chat.
 
 Requests for more detail retrieve diverse implementation sections, carrying the project forward from conversation history and preferring sections not already cited. Groq returns structured paragraphs with explicit source IDs; the server validates the claims and IDs before rendering citations. Run `npm run test:details` against a running server with a valid Groq configuration to reproduce the two-turn VeraScan detail regression using the live API.
 
