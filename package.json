@@ -9,6 +9,7 @@
     "test:e2e": "node scripts/e2e.mjs",
     "test:assistant": "node scripts/assistant-test.mjs",
     "test:details": "node scripts/detail-conversation-e2e.mjs",
+    "test:scroll": "node scripts/scroll-assistant-e2e.mjs",
     "test:guards": "node --experimental-strip-types scripts/guard-test.mts",
     "rag:sync": "node scripts/rag-sync.mjs",
     "rag:verify": "node scripts/rag-verify.mjs",

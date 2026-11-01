@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { profile } from "@/data/site";
 import ThemeToggle from "./ThemeToggle";
 import { EV, emit } from "./ui";
+import AssistantMark from "./AssistantMark";
 
 const LINKS = [["About", "about"], ["Work", "featured"], ["Projects", "projects"], ["Experience", "experience"], ["Skills", "skills"], ["Contact", "contact"]] as const;
 const MENU = [...LINKS, ["Achievements", "achievements"], ["Certifications", "certs"], ["Architecture", "how"]];
@@ -23,17 +24,28 @@ export default function Nav() {
 
   useEffect(() => {
     let frame = 0;
+    let measureFrame = 0;
+    let positions: { id: string; top: number }[] = [];
     const update = () => {
       frame = 0;
       setScrolled(window.scrollY > 24);
-      const sections = MENU.map(([, id]) => document.getElementById(id)).filter((e): e is HTMLElement => !!e);
-      sections.sort((a, b) => a.offsetTop - b.offsetTop);
-      const current = sections.filter(e => e.getBoundingClientRect().top <= 180).at(-1);
+      const current = positions.filter(e => e.top <= window.scrollY + 180).at(-1);
       setActive(current?.id ?? "");
     };
+    const measure = () => {
+      measureFrame = 0;
+      positions = MENU.flatMap(([, id]) => {
+        const section = document.getElementById(id);
+        return section ? [{ id, top: section.getBoundingClientRect().top + window.scrollY }] : [];
+      }).sort((a, b) => a.top - b.top);
+      update();
+    };
+    const onResize = () => { if (!measureFrame) measureFrame = requestAnimationFrame(measure); };
     const onScroll = () => { if (!frame) frame = requestAnimationFrame(update); };
-    update(); window.addEventListener("scroll", onScroll, { passive: true }); window.addEventListener("resize", onScroll);
-    return () => { cancelAnimationFrame(frame); window.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onScroll); };
+    const observer = new ResizeObserver(onResize);
+    observer.observe(document.body);
+    measure(); window.addEventListener("scroll", onScroll, { passive: true }); window.addEventListener("resize", onResize);
+    return () => { cancelAnimationFrame(frame); cancelAnimationFrame(measureFrame); observer.disconnect(); window.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onResize); };
   }, []);
   useEffect(() => {
     if (!menuOpen) return;
@@ -60,7 +72,7 @@ export default function Nav() {
         <div className="flex shrink-0 items-center gap-1.5 md:gap-2">
           <ThemeToggle />
           <button type="button" onClick={()=>emit(EV.openPalette)} aria-label="Open command palette" title="Search · Ctrl K / ⌘K" className="group flex h-10 w-10 items-center justify-center rounded-xl border border-line text-muted transition hover:border-accent/40 hover:text-ink"><svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" strokeWidth="1.5"/><path d="m13 13 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg></button>
-          <button type="button" onClick={()=>emit(EV.openAssistant)} className="hidden rounded-xl border border-line px-3 py-2.5 text-xs text-ink transition hover:border-accent/40 lg:block">Ask AI <span className="text-accent">↗</span></button>
+          <button type="button" onClick={()=>emit(EV.openAssistant)} className="hidden items-center gap-2 rounded-xl border border-line px-3 py-2.5 text-xs text-ink transition hover:border-accent/40 lg:flex"><AssistantMark className="h-4 w-4 text-accent" />Ask AI <span className="text-accent">↗</span></button>
           <motion.a whileHover={reduce?undefined:{y:-2}} whileTap={{scale:0.97}} href={profile.resume} download="BalamuruganPG_Resume.pdf" className="sheen hidden rounded-xl bg-accent px-4 py-2.5 text-xs font-semibold text-bg sm:block">Resume ↓</motion.a>
           <button ref={menuButton} type="button" aria-label={menuOpen?"Close menu":"Menu"} aria-expanded={menuOpen} aria-controls="mobile-navigation" onClick={()=>setMenuOpen(v=>!v)} className="flex h-10 items-center gap-2 rounded-xl border border-line px-3 text-xs text-ink xl:hidden"><span>{menuOpen?"Close":"Menu"}</span><span aria-hidden="true" className="relative block h-3 w-3"><motion.span animate={{rotate:menuOpen?45:0,y:menuOpen?3:0}} className="absolute top-0.5 left-0 h-px w-3 bg-current"/><motion.span animate={{rotate:menuOpen?-45:0,y:menuOpen?-3:0}} className="absolute bottom-0.5 left-0 h-px w-3 bg-current"/></span></button>
         </div>

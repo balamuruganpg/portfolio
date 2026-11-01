@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { STARTER_QUESTIONS } from "@/data/site";
 import { EV, emit } from "./ui";
+import AssistantMark from "./AssistantMark";
 
 interface Citation { label: string; href: string; section: string; index?: number }
 interface Msg {
@@ -105,13 +106,13 @@ export default function Assistant() {
 
   return <>
     <AnimatePresence>
-      {!open && <motion.button ref={launcherRef} key="launcher" initial={false} animate={{ opacity: 1, scale: 1 }} whileHover={reduce ? undefined : { y: -3 }} whileTap={{ scale: 0.97 }} type="button" onClick={() => setOpen(true)} className="assistant-launcher fixed right-5 bottom-5 z-40 flex items-center gap-3 rounded-full border border-accent/50 bg-surface px-5 py-3 text-sm font-medium text-ink shadow-xl" aria-label="Open portfolio assistant" data-testid="assistant-launcher"><span className="relative flex h-2 w-2"><span className="absolute inset-0 animate-ping rounded-full bg-accent/40" /><span className="relative h-2 w-2 rounded-full bg-accent" /></span>Ask about my work <span className="font-mono text-xs text-accent">↗</span></motion.button>}
+      {!open && <motion.button ref={launcherRef} key="launcher" initial={false} animate={{ opacity: 1, scale: 1 }} whileHover={reduce ? undefined : { y: -3 }} whileTap={{ scale: 0.97 }} type="button" onClick={() => setOpen(true)} className="assistant-launcher fixed right-5 bottom-5 z-40 flex items-center gap-3 rounded-full border border-accent/50 bg-surface px-5 py-3 text-sm font-medium text-ink shadow-xl" aria-label="Open portfolio assistant" data-testid="assistant-launcher"><AssistantMark className="h-6 w-6 text-accent" />Ask about my work <span className="font-mono text-xs text-accent">↗</span></motion.button>}
     </AnimatePresence>
     <AnimatePresence>
       {open && <motion.section ref={dialogRef} key="assistant" initial={{ opacity: 0, y: reduce ? 0 : 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: reduce ? 0 : 12 }} transition={{ duration: reduce ? 0 : 0.25 }} role="dialog" aria-label="Portfolio assistant" data-testid="assistant" className="fixed right-3 bottom-3 z-[60] flex h-[min(710px,calc(100dvh-1.5rem))] w-[min(470px,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-2xl">
         <header className="border-b border-line bg-raised/50 px-5 py-4">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3"><span aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 font-mono text-xs text-accent">BPG</span><div><h2 className="text-sm font-semibold">Portfolio Assistant</h2><p className="mt-0.5 font-mono text-[10px] text-muted">{provider ? `${provider} configured · evidence checked` : "Evidence mode · no model required"}</p></div></div>
+            <div className="flex min-w-0 items-center gap-3"><span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 text-accent"><AssistantMark className="h-7 w-7" /></span><div><h2 className="text-sm font-semibold">Portfolio Assistant</h2><p className="mt-0.5 font-mono text-[10px] text-muted">{provider ? `${provider} configured · evidence checked` : "Evidence mode · no model required"}</p></div></div>
             <div className="flex items-center gap-1"><button type="button" disabled={busy || !msgs.length} onClick={() => {setMsgs([]);setInput("");inputRef.current?.focus();}} aria-label="Clear conversation" title="New conversation" className="rounded-lg p-2 text-muted hover:bg-raised disabled:opacity-30">↺</button><button type="button" onClick={() => setOpen(false)} aria-label="Close assistant" className="rounded-lg p-2 text-muted hover:bg-raised">✕</button></div>
           </div>
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2"><p className="text-xs text-muted">Grounded on this site, not the open web.</p>{knowledge && <button type="button" onClick={()=>setShowSources(v=>!v)} aria-expanded={showSources} aria-controls="assistant-source-coverage" className="rounded px-2 py-1 font-mono text-[10px] text-accent hover:bg-raised">{knowledge.sourceCount} sources {showSources?"−":"+"}</button>}</div>

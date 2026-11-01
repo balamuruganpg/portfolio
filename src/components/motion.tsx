@@ -390,11 +390,9 @@ export function ParticleField({ className = "" }: { className?: string }) {
 
     const onScroll = () => {
       isScrolling = true;
-      document.documentElement.dataset.scrolling = "true";
       if (scrollTimer) clearTimeout(scrollTimer);
       scrollTimer = setTimeout(() => {
         isScrolling = false;
-        delete document.documentElement.dataset.scrolling;
         if (visible && window.innerWidth >= 768) {
           cancelAnimationFrame(raf);
           raf = requestAnimationFrame(loop);
@@ -403,6 +401,7 @@ export function ParticleField({ className = "" }: { className?: string }) {
     };
 
     const onMove = (e: PointerEvent) => {
+      if (!visible || isScrolling) return;
       const r = canvas.getBoundingClientRect();
       mouse.x = e.clientX - r.left;
       mouse.y = e.clientY - r.top;
@@ -424,16 +423,15 @@ export function ParticleField({ className = "" }: { className?: string }) {
     });
     io.observe(canvas);
 
-    window.addEventListener("scroll", onScroll, { passive: true });
+    document.addEventListener("scroll", onScroll, { passive: true, capture: true });
     window.addEventListener("resize", resize, { passive: true });
     window.addEventListener("pointermove", onMove, { passive: true });
     document.addEventListener("pointerleave", onLeave);
     return () => {
       cancelAnimationFrame(raf);
       if (scrollTimer) clearTimeout(scrollTimer);
-      delete document.documentElement.dataset.scrolling;
       io.disconnect();
-      window.removeEventListener("scroll", onScroll);
+      document.removeEventListener("scroll", onScroll, true);
       window.removeEventListener("resize", resize);
       window.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerleave", onLeave);

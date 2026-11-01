@@ -13,6 +13,7 @@ export default function BackgroundMotion() {
     const fine = matchMedia("(hover: hover) and (pointer: fine)");
     let frame = 0;
     const move = (event: PointerEvent) => {
+      if (document.documentElement.dataset.scrolling === "true") return;
       if (frame) cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         root.style.setProperty("--pointer-x", `${event.clientX}px`);
