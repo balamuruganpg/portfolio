@@ -28,7 +28,7 @@ const INTENTS: Intent[] = [
   { re: /\b(featured|best|top|main|flagship|strongest)\b/, boost: (d) => (d.project?.featured ? 6 : 0) },
   { re: /\b(intern|internship|internships|experience|worked|work|company|companies)\b/, boost: (d) => (d.section === "experience" ? 8 : 0) },
   { re: /\b(education|college|degree|cgpa|gpa|university|school|study|studies|studying|grade|marks|rank|12th)\b/, boost: (d) => (d.section === "education" ? 8 : 0) },
-  { re: /\b(cert|certs|certification|certifications|certificate|certified|course|courses)\b/, boost: (d) => (d.section === "certs" ? 8 : 0) },
+  { re: /\b(certs?|certifications?|certificates?|credentials?|certified|courses?)\b/, boost: (d) => (d.section === "certs" ? 8 : 0) },
   { re: /\b(skill|skills|know|knows|languages?|expertise|technologies|tools)\b/, boost: (d) => (d.section === "skills" ? 6 : 0) },
   { re: /\b(open to|hire|hiring|available|availability|roles?|job|jobs|opportunit\w*|looking)\b/, boost: (d) => (d.section === "profile" ? 8 : 0) },
   { re: /\b(who\b|who is|about (him|balamurugan|bpg)|balamurugan|bpg|location|located|based in|where is he)\b/, boost: (d) => (d.section === "profile" ? 6 : 0) },
@@ -70,6 +70,24 @@ export function retrieve(query: string, corpus: Doc[], k = 6): Retrieval {
   if (named.length) return { docs: named.slice(0, k), scores: named.map(() => 30).slice(0, k), aliasHit: true, offTopic: false };
   const credentials = corpus.filter(d => d.credential && d.aliases.some(a => new RegExp(`(^|[^a-z0-9])${a.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}([^a-z0-9]|$)`).test(q)));
   if (credentials.length) return { docs: credentials.slice(0, k), scores: credentials.slice(0, k).map(() => 30), aliasHit: true, offTopic: false };
+  const credentialTopic = /\b(certs?|certifications?|certificates?|credentials?|courses?)\b/.test(q);
+  const matchedGroups = corpus.filter(d => d.credentialGroup && d.id !== "certs" && d.aliases.some(a => new RegExp(`(^|[^a-z0-9])${a.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}([^a-z0-9]|$)`).test(q))).sort((a,b) => Math.max(...b.aliases.map(x=>x.length)) - Math.max(...a.aliases.map(x=>x.length)));
+  const groups = matchedGroups.filter(d => !matchedGroups.some(other => other !== d && other.credentialGroup!.filter.toLowerCase().includes(d.credentialGroup!.filter.toLowerCase()) && other.credentialGroup!.filter.length > d.credentialGroup!.filter.length));
+  if (credentialTopic || (groups.length && !/\b(projects?|tools?|stack|deploy|architecture|used)\b/.test(q))) {
+    const excludesPending = /\b(exclud(?:e|es|ed|ing)|without|apart from|not counting)\b[^.?!]{0,60}\b(ongoing|in.progress|current|pending)\b/.test(q);
+    if (!excludesPending && /\b(in.progress|ongoing|currently studying|not completed)\b/.test(q)) {
+      const pending = corpus.filter(d => d.credential?.status === "in-progress" && (!groups.length || groups.some(g => d.text.toLowerCase().includes(g.credentialGroup!.filter.toLowerCase()))));
+      const docs = pending.length ? pending : groups;
+      return { docs, scores: docs.map(() => 30), aliasHit: true, offTopic: false };
+    }
+    const group = groups[0] ?? corpus.find(d => d.id === "certs");
+    if (group) {
+      const selected = groups.length ? groups : [group];
+      const records = corpus.filter(d => selected.some(g => g.credentialGroup?.members?.includes(d.id)));
+      const docs = [...selected, ...records].slice(0, k);
+      return { docs, scores: docs.map(() => 30), aliasHit: true, offTopic: false };
+    }
+  }
   if (/\b(live|deployed|demos?|online|try)\b/.test(q) && /\b(projects?|apps?|which|what)\b/.test(q) && !/\b(not|aren.t|no)\b/.test(q)) {
     const docs = corpus.filter(d => d.project?.live).slice(0, k);
     return { docs, scores: docs.map(() => 30), aliasHit: false, offTopic: false };

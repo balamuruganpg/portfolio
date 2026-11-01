@@ -36,6 +36,7 @@ export interface Doc {
   project?: Project;
   projectSlug?: string;
   credential?: { status: "completed" | "in-progress"; credentialId?: string };
+  credentialGroup?: { filter: string; count: number; members?: string[] };
   provenance?: {
     sourceId: string;
     kind: string;
@@ -160,7 +161,26 @@ export function buildSiteDocs(): Doc[] {
     summary: `${completedCredentials.length} unique completed credentials with document proof, including ${completedCredentials.filter(c => c.kind === "Certification").length} Oracle certifications and ${completedCredentials.filter(c => c.kind === "Professional certificate").length} Coursera Professional Certificates. Course completions and programme components are labelled separately. Deep Learning Specialization is in progress and excluded from this count.`,
     aliases: ["certification", "certifications", "certificate", "credentials", "credential", "certified", "oracle", "oci", "ibm", "nptel", "google", "andrew ng", "coursera", "tableau certificate", "tableau certification"],
     href: "#certs",
+    credentialGroup: { filter: "", count: completedCredentials.length },
   });
+
+  const credentialGroups = [
+    { id: "oracle", label: "Oracle", filter: "Oracle", aliases: ["oracle", "oci"], records: completedCredentials.filter(c => c.issuer === "Oracle") },
+    { id: "ibm", label: "IBM", filter: "IBM", aliases: ["ibm"], records: completedCredentials.filter(c => c.issuer === "IBM") },
+    { id: "google", label: "Google", filter: "Google", aliases: ["google"], records: completedCredentials.filter(c => /^Google/.test(c.issuer)) },
+    { id: "google-cloud", label: "Google Cloud", filter: "Google Cloud", aliases: ["google cloud"], records: completedCredentials.filter(c => c.issuer === "Google Cloud") },
+    { id: "nptel", label: "NPTEL", filter: "NPTEL", aliases: ["nptel"], records: completedCredentials.filter(c => c.issuer === "NPTEL") },
+    { id: "coursera", label: "Coursera", filter: "Coursera", aliases: ["coursera"], records: completedCredentials.filter(c => c.platform === "Coursera") },
+    { id: "meta", label: "Meta", filter: "Meta", aliases: ["meta"], records: completedCredentials.filter(c => c.issuer === "Meta") },
+  ];
+  for (const issuer of [...new Set(completedCredentials.map(c => c.issuer))]) {
+    if (credentialGroups.some(g => g.label === issuer)) continue;
+    credentialGroups.push({ id: issuer.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""), label: issuer, filter: issuer, aliases: [issuer.toLowerCase(), ...(issuer.includes("Indian Institute of Management") ? ["iim mumbai"] : [])], records: completedCredentials.filter(c => c.issuer === issuer) });
+  }
+  for (const group of credentialGroups) {
+    const text = `${group.records.length} unique completed ${group.label} credentials are documented. ${group.records.map(c => `${c.title} (${c.kind}${c.parentId ? "; component of IBM Data Science" : ""})`).join("; ")}. Each has its own original certificate and ID or verification link in the catalogue. Course completions are distinct from vendor exam certifications. The only documented in-progress study is Deep Learning Specialization by DeepLearning.AI / Andrew Ng, excluded from completed counts; no other ongoing credential is documented.`;
+    docs.push({ id: `credential-group:${group.id}`, section: "certs", title: `${group.label} credentials`, text, summary: text, aliases: group.aliases, href: "#certs", credentialGroup: { filter: group.filter, count: group.records.length, members: group.records.map(c => `credential:${c.id}`) } });
+  }
 
   const credentialAliases: Record<string, string[]> = {
     "oci-data-science-2025": ["oracle data science", "oci data science"],

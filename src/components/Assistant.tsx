@@ -16,6 +16,7 @@ interface Msg {
   suggestions?: string[];
   provider?: string;
   model?: string;
+  actions?: { type: "credentials"; label: string; query: string }[];
 }
 const modes: Record<string, string> = { llm: "Source-checked answer", offline: "Original portfolio facts", guarded: "Original facts · generated answer withheld", refused: "Outside portfolio scope", greeting: "Ready to explore", cancelled: "Stopped", "source-unavailable": "Source unavailable · verified profile link", error: "Request interrupted" };
 
@@ -59,7 +60,8 @@ export default function Assistant() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "I couldn't complete that request. Please try again.");
       if (typeof data.answer !== "string") throw new Error("The response was incomplete. Please try again.");
-      setMsgs(m => [...m, { role: "assistant", text: data.answer, citations: data.citations, mode: data.mode, note: data.note, suggestions: data.suggestions, provider: data.provider, model: data.model }]);
+      const actions = Array.isArray(data.actions) ? data.actions.filter((a: { type?: string; label?: unknown; query?: unknown }) => a.type === "credentials" && typeof a.label === "string" && typeof a.query === "string").slice(0, 2) : [];
+      setMsgs(m => [...m, { role: "assistant", text: data.answer, citations: data.citations, mode: data.mode, note: data.note, suggestions: data.suggestions, provider: data.provider, model: data.model, actions }]);
     } catch (error) {
       const stopped = abort.signal.aborted && abort.signal.reason !== "timeout";
       setMsgs(m => [...m, { role: "assistant", text: stopped ? "Stopped. Ask another question whenever you're ready." : abort.signal.aborted ? "That took too long. Please try again." : error instanceof Error ? error.message : "Connection interrupted. Please try again.", mode: stopped ? "cancelled" : "error" }]);
@@ -89,11 +91,12 @@ export default function Assistant() {
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
     };
     window.addEventListener("keydown", onKey);
-    return () => { clearTimeout(timer); window.removeEventListener("keydown", onKey); if (previous?.isConnected) previous.focus(); else launcherRef.current?.focus(); };
+    return () => { clearTimeout(timer); window.removeEventListener("keydown", onKey); if (previous?.isConnected) previous.focus({ preventScroll: true }); else launcherRef.current?.focus({ preventScroll: true }); };
   }, [open]);
 
   const cite = (c: Citation, event: React.MouseEvent) => {
     if (c.href.startsWith("#p-")) { event.preventDefault(); emit(EV.focusProject, c.href.slice(3)); }
+    if (c.href === "#certs") { event.preventDefault(); setOpen(false); emit(EV.focusCredentials, { view: "all" }); }
   };
   const opensProofTab = (href: string) => href.startsWith("https:") || href.startsWith("/credentials/");
   const answerBody = (message: Msg) => message.text.split(/(\[\d+\])/g).map((part, i) => {
@@ -127,6 +130,7 @@ export default function Assistant() {
               {message.note && <p className="rounded-lg border border-line bg-raised/50 px-3 py-2 text-xs leading-relaxed text-muted">{message.note}</p>}
               <div className="whitespace-pre-wrap break-words text-sm leading-7 text-ink">{answerBody(message)}</div>
               {!!message.citations?.length && <div data-testid="citations"><p className="label mb-2 !text-[10px]">Sources</p><div className="flex flex-wrap gap-2">{message.citations.map(c => <a key={`${c.href}-${c.index}`} href={c.href} target={opensProofTab(c.href) ? "_blank" : undefined} rel={opensProofTab(c.href) ? "noopener noreferrer" : undefined} onClick={e=>cite(c,e)} data-citation={c.label} className="rounded-lg border border-accent/30 bg-accent/5 px-2.5 py-1.5 text-xs text-accent hover:bg-accent/15">{c.label} ↗</a>)}</div></div>}
+              {!!message.actions?.length && <div className="flex flex-wrap gap-2">{message.actions.map(action => <button key={action.label} type="button" onClick={() => { setOpen(false); emit(EV.focusCredentials, { view: "all", query: action.query }); }} className="rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-xs font-medium text-accent hover:bg-accent/20">{action.label} →</button>)}</div>}
               <div className="flex items-center justify-between gap-3"><span className="font-mono text-[10px] text-muted">{message.provider && (message.mode === "llm" || message.mode === "guarded") ? `${message.provider}${message.model ? ` · ${message.model}` : ""} · ` : ""}{modes[message.mode ?? ""]}</span><button type="button" aria-label="Copy answer" onClick={async()=>{try{await navigator.clipboard.writeText(message.text.replace(/\[\d+\]/g,""));setCopied(i);setTimeout(()=>setCopied(null),1800);}catch{setCopied(null);}}} className="shrink-0 rounded px-2 py-1 text-xs text-muted hover:bg-raised">{copied===i?"Copied ✓":"Copy"}</button></div>
               {message.mode === "error" && lastQuestion && <button type="button" disabled={busy} onClick={()=>ask(lastQuestion)} aria-label="Try again" className="link text-sm text-accent">Try again ↗</button>}
             </>}

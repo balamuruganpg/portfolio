@@ -7,7 +7,7 @@ import { EV, emit } from "./ui";
 
 interface Item {
   id: string;
-  group: "Ask" | "Projects" | "Sections" | "Links";
+  group: "Ask" | "Projects" | "Certificates" | "Sections" | "Links";
   label: string;
   hint?: string;
   run: () => void;
@@ -20,7 +20,6 @@ const SECTIONS = [
   ["All projects", "projects"],
   ["Experience & education", "experience"],
   ["Skills", "skills"],
-  ["Certifications", "certs"],
   ["How the assistant works", "how"],
   ["Contact", "contact"],
 ] as const;
@@ -59,6 +58,13 @@ export default function CommandPalette() {
 
   const all: Item[] = useMemo(
     () => [
+      {
+        id: "certificates",
+        group: "Certificates",
+        label: "Certificates — browse all 45",
+        hint: "search & issuer filters",
+        run: () => emit(EV.focusCredentials, { view: "all" }),
+      },
       ...projects.map<Item>((p) => ({
         id: `p-${p.slug}`,
         group: "Projects",

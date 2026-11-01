@@ -22,6 +22,7 @@ assert.match(google.answer, /not|programme|program|course/i);
 assert.ok(google.citations.some(c => c.href === "https://coursera.org/verify/professional-cert/1VW710KIADU0"));
 const count = await ask("How many completed credentials does he have, excluding ongoing study?");
 assert.match(count.answer, /45/);
+assert.ok(count.citations.some(c => c.href === "#certs"), "completed count must cite the catalogue, not only pending study");
 assert.ok(!/45 (?:professional |industry )?certifications/i.test(count.answer));
 assert.ok(generated > 0, "live integration should exercise at least one model-generated answer");
 const publicProof = await ask("Show his credentials");

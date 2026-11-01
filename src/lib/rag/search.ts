@@ -2,6 +2,7 @@ import type { Doc } from "../corpus";
 import type { HistoryItem } from "../agent";
 import { isDetailRequest, retrieveConversation } from "../agent";
 import { createBm25Index, isBlockedQuestion, searchBm25, type EvidenceChunk } from "./core";
+import type { QueryPlan } from "./planning";
 
 export function evidenceDocs(chunks: EvidenceChunk[], approved: Doc[]): Doc[] {
   return chunks.map(chunk => ({
@@ -43,7 +44,7 @@ function expansionSections(candidates: EvidenceChunk[], history: HistoryItem[]) 
   return selected.slice(0, 6);
 }
 
-export function retrieveEvidence(question: string, approved: Doc[], chunks: EvidenceChunk[], history: HistoryItem[], budget = 12_000) {
+export function retrieveEvidence(question: string, approved: Doc[], chunks: EvidenceChunk[], history: HistoryItem[], budget = 12_000, plan?: QueryPlan | null) {
   if (isBlockedQuestion(question)) return { docs: [], scores: [], aliasHit: false, offTopic: true };
   const expandedHistory = history.map(h => ({ ...h, citations: h.citations.flatMap(c => {
     const chunk = chunks.find(d => d.href === c.href && d.title === c.label);
@@ -52,11 +53,14 @@ export function retrieveEvidence(question: string, approved: Doc[], chunks: Evid
   }) }));
   let initial = retrieveConversation(question, approved, expandedHistory);
   if (initial.offTopic) return initial;
+  const planned = plan?.ids.flatMap(id => approved.filter(d => d.id === id)) ?? [];
+  if (planned.length) initial = { docs: planned, scores: planned.map(() => 30), aliasHit: false, offTopic: false };
+  const searchQuestion = [question, ...(plan?.queries ?? [])].join(" ");
   if (!initial.docs.length) {
     // Technical terms newly learned from documentation need not appear in the
     // short portfolio summary. Require multiple matching terms to avoid
     // turning a single generic word into an unrelated project answer.
-    const discoveries = searchBm25(question, createBm25Index(chunks), 4).filter(r => r.matched >= 2 && r.score >= 1.5);
+    const discoveries = searchBm25(searchQuestion, createBm25Index(chunks), 4).filter(r => r.matched >= 2 && r.score >= 1.5);
     const discovered = new Set(discoveries.map(r => r.chunk.projectSlug).filter(Boolean));
     const anchors = approved.filter(d => d.project && discovered.has(d.project.slug)).slice(0, 2);
     if (!anchors.length) return initial;
@@ -64,21 +68,27 @@ export function retrieveEvidence(question: string, approved: Doc[], chunks: Evid
   }
   const slugs = new Set(initial.docs.flatMap(d => d.project ? [d.project.slug] : []));
   // Generic profile questions do not acquire unrelated README claims.
-  const candidates = chunks.filter(c => slugs.size ? slugs.has(c.projectSlug ?? "") : !c.projectSlug && /resume|education|experience|skills|linkedin|profile/i.test(question));
-  let focus = question.toLowerCase();
+  const candidates = chunks.filter(c => slugs.size ? slugs.has(c.projectSlug ?? "") : !c.projectSlug && /resume|education|experience|skills|linkedin|profile/i.test(searchQuestion));
+  let focus = searchQuestion.toLowerCase();
   for (const doc of initial.docs) {
     if (!doc.project) continue;
     for (const name of [doc.project.name, doc.project.slug]) focus = focus.replaceAll(name.toLowerCase(), " ");
   }
   focus = focus.replace(/\b(i|said|please|can|you|could|would|tell|me|more|much|details?|detailed|depth|in|go|deeper|expand|elaborate|about|it|its|this|that|the|project|package|app|system|really|not|again|explain|give|want|need|a|an|some|very|and|on|how|does|work|works)\b/g, " ").replace(/[^a-z0-9]+/g, " ").trim();
   const index = createBm25Index(candidates);
-  const detail = isDetailRequest(question);
+  const detail = isDetailRequest(question) || plan?.intent === "detail";
   const focused = detail && focus ? searchBm25(focus, index, 8) : [];
   // Conversational words such as "provide" need not match a README. Without
   // technical matches, expand the known project rather than lose its evidence.
   const broadExpansion = detail && !focused.length;
-  const ranked = broadExpansion ? expansionSections(candidates, history) : (detail ? focused : searchBm25(question, index, 8)).map(r => r.chunk);
-  const unique = ranked.filter((chunk, i, all) => all.findIndex(c => fingerprint(c.text) === fingerprint(chunk.text)) === i).slice(0, broadExpansion ? 6 : 4);
+  const ranked = slugs.size > 1
+    ? [...slugs].flatMap(slug => {
+      const own = candidates.filter(c => c.projectSlug === slug);
+      const hits = searchBm25(searchQuestion, createBm25Index(own), 2).map(r => r.chunk);
+      return hits.length ? hits : expansionSections(own, history).slice(0, 2);
+    })
+    : broadExpansion ? expansionSections(candidates, history) : (detail ? focused : searchBm25(searchQuestion, index, 8)).map(r => r.chunk);
+  const unique = ranked.filter((chunk, i, all) => all.findIndex(c => fingerprint(c.text) === fingerprint(chunk.text)) === i).slice(0, slugs.size > 1 ? 2 * slugs.size : broadExpansion ? 6 : 4);
   const extras = evidenceDocs(unique, approved);
   const docs: Doc[] = [];
   let used = 0;

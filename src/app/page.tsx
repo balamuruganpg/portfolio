@@ -366,7 +366,7 @@ export default function Home() {
                   step: "01",
                   title: "Retrieve",
                   detail:
-                    "BM25 retrieval across versioned GitHub documentation, selected resume passages and package documentation, anchored to the approved portfolio facts. Out-of-scope and private-configuration requests are refused.",
+                    "Conversation-aware source selection and BM25 retrieval across versioned GitHub documentation, resume passages, package documentation and certificate records. Answers stay anchored to approved portfolio facts; private-configuration requests are refused.",
                   tag: "Versioned Evidence",
                 },
                 {

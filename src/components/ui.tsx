@@ -6,6 +6,7 @@ export const EV = {
   openAssistant: "bpg:open-assistant",
   openPalette: "bpg:open-palette",
   focusProject: "bpg:focus-project", // detail: slug
+  focusCredentials: "bpg:focus-credentials", // detail: { query?: string; issuer?: string; view?: "all" | "featured" }
 } as const;
 
 export function emit(name: string, detail?: unknown) {

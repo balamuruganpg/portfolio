@@ -7,6 +7,7 @@ import { citationsFor } from "@/lib/retrieve";
 import { evidenceDocs, retrieveEvidence } from "@/lib/rag/search";
 import { isBlockedQuestion } from "@/lib/rag/core";
 import { knowledgeStatus, loadRagEvidence } from "@/lib/rag/server";
+import { planQuestion, shouldPlanQuestion } from "@/lib/rag/planning";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,17 +53,29 @@ export async function POST(req: Request) {
     return NextResponse.json({ answer: "Balamurugan’s LinkedIn profile is https://www.linkedin.com/in/balamuruganpg. Its profile content is not indexed because LinkedIn blocked public access. I can answer from his approved portfolio and resume instead. [1]", citations: [{ ...citationsFor([contact])[0], index: 1 }], mode: "source-unavailable", suggestions: ["What are his skills?", "What are his achievements?"] }, { headers });
   }
   if (/^(hi|hello|hey|good (morning|evening|afternoon))[!.\s]*$/i.test(question)) return NextResponse.json({ answer: "Hi! I can help you explore Balamurugan's projects, verified results and experience. What would you like to know?", citations: [], mode: "greeting", suggestions: ["What is VeraScan?", "What are his achievements?", "Is he open to roles?"] }, { headers });
-  const result = retrieveEvidence(question, approved, evidence.chunks, history);
+  let result = retrieveEvidence(question, approved, evidence.chunks, history);
+  let strategy = result.aliasHit ? "direct" : "lexical";
+  if (shouldPlanQuestion(question, result)) {
+    const plan = await planQuestion(question, approved, history, req.signal);
+    if (plan) {
+      result = retrieveEvidence(question, approved, evidence.chunks, history, 12_000, plan);
+      strategy = "semantic";
+    }
+  }
   if (!result.docs.length) return NextResponse.json({ answer: REFUSAL, citations: [], mode: "refused", suggestions: ["What is VeraScan?", "Which projects are live?"] }, { headers });
   const docs = result.docs;
   const citations = citationsFor(docs);
   const project = docs.find(d => d.project)?.project;
-  const suggestions = project ? [`How does ${project.name} work?`, `What are the limitations of ${project.name}?`, "Which projects are live?"] : ["What are his achievements?", "What is VeraScan?", "How can I contact him?"];
+  const credentialGroup = docs.find(d => d.credentialGroup)?.credentialGroup;
+  const certificateTopic = !!credentialGroup || docs.some(d => d.credential);
+  // Actions come only from approved metadata; the model cannot supply URLs or tools.
+  const actions = certificateTopic ? [{ type: "credentials", label: credentialGroup?.filter ? `Browse ${credentialGroup.filter} credentials` : "Browse all 45 credentials", query: credentialGroup?.filter ?? "" }] : [];
+  const suggestions = certificateTopic ? ["Which Oracle certifications does he have?", "Which courses are in progress?", "Show IBM credentials"] : project ? [`How does ${project.name} work?`, `What are the limitations of ${project.name}?`, "Which projects are live?"] : ["What are his achievements?", "What is VeraScan?", "How can I contact him?"];
   try {
     const result = await generateGroundedReply(question, docs, history, req.signal);
     const used = result.mode === "llm" ? result.cited.map(index => ({ ...citationsFor([docs[index - 1]])[0], index })) : citations;
     const note = result.mode === "guarded" ? "I couldn't verify the generated answer, so here are the original portfolio facts." : result.mode === "offline" ? "The language model is unavailable. These are the original facts from this portfolio, with sources." : undefined;
-    return NextResponse.json({ answer: result.text, citations: used, mode: result.mode, provider: result.provider, model: result.model, generationMs: result.generationMs, note, suggestions }, { headers });
+    return NextResponse.json({ answer: result.text, citations: used, mode: result.mode, provider: result.provider, model: result.model, generationMs: result.generationMs, retrieval: { strategy, sourceCount: docs.length }, actions, note, suggestions }, { headers });
   } catch {
     if (req.signal.aborted) return new Response(null, { status: 499 });
     return NextResponse.json({ error: "The answer timed out. Please try again." }, { status: 503, headers });

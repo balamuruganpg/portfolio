@@ -260,7 +260,7 @@ This project is open-source and available under the [MIT License](LICENSE).
 
 ## Separate RAG knowledge base
 
-The assistant retrieves from approved site facts plus a server-only source index in `content/rag/`. The snapshot includes all 17 listed repositories at immutable commits, selected architecture/evaluation docs, resume passages, GitHub profile metadata and VeraScan package documentation. BM25 with heading weighting and query expansion ranks passages; it requires no embeddings or vector database. Imported sources never automatically change public page claims.
+The assistant retrieves from approved site facts plus a server-only source index in `content/rag/`. The snapshot includes all 17 listed repositories at immutable commits, selected architecture/evaluation docs, resume passages, GitHub profile metadata and VeraScan package documentation. Exact project names and certificate categories use direct routing. Open-ended questions use a bounded model query planner that selects only known source IDs and technical search terms, followed by heading-weighted BM25 passage retrieval. Comparisons reserve evidence for each selected project. This is model-assisted retrieval, without embeddings or a vector database. Imported sources never automatically change public page claims.
 
 ```bash
 npm run rag:sync       # refresh allowlisted source snapshots (owner-run, network)
@@ -284,8 +284,11 @@ The assistant retrieves individual credential records with exact IDs and proof c
 npm run test:credentials      # Counts, deduplication, source/public SHA-256, IDs and URL destinations
 npm run test:credentials:e2e  # Running server: responsive cards, catalogue search and all proof files
 npm run test:credentials:api  # Running server + model: specific proof, study status and private-secret refusal
+node scripts/query-planner-test.mjs # Structured routing, cancellation and lexical fallback
+node scripts/certificate-navigation-e2e.mjs # Header, tabs, search, issuer filters and catalogue actions
+node scripts/assistant-conversation-e2e.mjs # Running server + model: broad questions and follow-ups
 ```
 
-To update the catalogue, inspect the original document and its embedded links, retain its SHA-256 and source paths, add one canonical record per unique credential, and copy its original bytes to its public proof path. Never manufacture a verification URL or treat an in-progress course as completed. Only the expanded catalogue mounts the full list; certificate assets are loaded when opened.
+To update the catalogue, inspect the original document and its embedded links, retain its SHA-256 and source paths, add one canonical record per unique credential, and copy its original bytes to its public proof path. Never manufacture a verification URL or treat an in-progress course as completed. Featured/All tabs, global search and issuer filters are above the cards; matching cards mount in pages of twelve and proof assets load only when opened. The header, command palette and assistant catalogue buttons provide direct navigation.
 
 LinkedIn blocks public retrieval for the exact profile (HTTP 999). The assistant discloses that gap. The owner can supply profile text using the format in `content/rag/imports/README.md`.

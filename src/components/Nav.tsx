@@ -8,8 +8,8 @@ import ThemeToggle from "./ThemeToggle";
 import { EV, emit } from "./ui";
 import AssistantMark from "./AssistantMark";
 
-const LINKS = [["About", "about"], ["Work", "featured"], ["Projects", "projects"], ["Experience", "experience"], ["Skills", "skills"], ["Contact", "contact"]] as const;
-const MENU = [...LINKS, ["Achievements", "achievements"], ["Certifications", "certs"], ["Architecture", "how"]];
+const LINKS = [["About", "about"], ["Work", "featured"], ["Projects", "projects"], ["Experience", "experience"], ["Skills", "skills"], ["Certificates", "certs"], ["Contact", "contact"]] as const;
+const MENU = [...LINKS, ["Achievements", "achievements"], ["Architecture", "how"]];
 
 export default function Nav() {
   const [active, setActive] = useState("");

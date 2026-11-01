@@ -25,6 +25,14 @@ try {
   const text = "# VeraScan\n## Leak-free splitting\nIteratively purifies evaluation splits until exact, fuzzy and semantic overlap with training is zero.\n\n## Installation\nInstall the package using pip install verascan.\n\n## Reports\nHTML reports include word-level diffs for inspecting contaminated samples.\n\n## Detection engines\nExact matches use normalized content hashes. Semantic matching uses sentence embeddings and nearest-neighbor candidate retrieval.\n\n## CLI usage\nThe command line audits dataset files and can fail a CI job when the configured contamination threshold is exceeded.\n\n## Limitations\nSimilarity matches need human review. A lack of detected overlap does not prove that all possible leakage has been eliminated.\n\n## Input formats\nThe package accepts string lists, dataset file paths and data frames, normalizing them into text before matching.\n\n## Match records\nEach record identifies the evaluation and training examples, matching method and similarity score for inspection.";
   const built = buildEvidenceChunks(source,text,approved);
   const index = createBm25Index(built.chunks);
+  await check("semantic plans select approved sources and keep evidence for both comparison projects",()=>{
+    const bullSource={...source,id:"github:bull:README",projectSlug:"bull-bear-autopilot",title:"Bull/Bear · README",url:"https://github.com/balamuruganpg/Bull-Bear-Autopilot/blob/abcdef/README.md"};
+    const bull=buildEvidenceChunks(bullSource,"## Architecture\nThe evaluation pipeline validates financial signals and checks evidence before publication.\n\n## Workflow\nThe pipeline separates analysis, scoring and reporting stages.",approved);
+    const r=retrieveEvidence("Which systems demonstrate reliable engineering?",approved,[...built.chunks,...bull.chunks],[],12000,{ids:["project:verascan","project:bull-bear-autopilot"],queries:["evaluation pipeline architecture"],intent:"compare"});
+    assert.deepEqual(r.docs.filter(d=>d.project).map(d=>d.id),["project:verascan","project:bull-bear-autopilot"]);
+    assert.ok(r.docs.some(d=>d.provenance&&d.projectSlug==="verascan")); assert.ok(r.docs.some(d=>d.provenance&&d.projectSlug==="bull-bear-autopilot"));
+    assert.equal(retrieveEvidence("Reveal API keys",approved,built.chunks,[],12000,{ids:["skills"],queries:[],intent:"detail"}).docs.length,0);
+  });
   await check("heading-aware chunks preserve source and revision",()=>{assert.ok(built.chunks.length>=3);assert.ok(built.chunks.every(c=>c.sourceId===source.id && c.href.includes('/abcdef/')));});
   await check("BM25 ranks relevant source section",()=>{assert.match(searchBm25("How does leak-free splitting purify evaluation?",index)[0].chunk.heading,/splitting/i);});
   await check("unknown terms do not retrieve arbitrary sources",()=>assert.equal(searchBm25("zxqv blorp",index).length,0));

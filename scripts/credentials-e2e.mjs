@@ -15,15 +15,23 @@ try {
     assert.match(await page.locator("#top").innerText(), /45 credentials/);
     assert.equal(await page.locator("[data-featured-credential]").count(), 12);
     assert.match(await page.locator("#learning-deep-learning-specialization").innerText(), /In progress/);
-    await page.getByText("Explore all 45 completed credentials", { exact: true }).click();
-    await page.locator("[data-catalogue-credential]").first().waitFor();
-    assert.equal(await page.locator("[data-catalogue-credential]").count(), 45);
     const input = page.getByRole("searchbox", { name: "Search credentials" });
+    assert.equal(await input.isVisible(), true);
+    await page.getByRole("tab", { name: "All 45", exact: true }).click();
+    await page.locator("[data-catalogue-credential]").first().waitFor();
+    assert.equal(await page.locator("[data-catalogue-credential]").count(), 12);
+    while (await page.getByRole("button", { name: /Load more certificates/ }).count()) await page.getByRole("button", { name: /Load more certificates/ }).click();
+    assert.equal(await page.locator("[data-catalogue-credential]").count(), 45);
+    const ids = await page.locator("#credential-section [id]").evaluateAll(nodes => nodes.map(n => n.id));
+    assert.equal(ids.length, new Set(ids).size);
     await input.fill("DJK8QTWJJAF6");
     assert.equal(await page.locator("[data-catalogue-credential]").count(), 1);
     assert.match(await page.locator("[data-catalogue-credential]").innerText(), /Machine Learning with Python/);
     await input.fill("not-a-real-certificate"); assert.match(await page.getByTestId("credential-results").innerText(), /0 of 45/);
     await input.fill("");
+    await page.getByRole("combobox", { name: "Filter by issuer" }).selectOption("Oracle");
+    assert.equal(await page.locator("[data-catalogue-credential]").count(), 4);
+    await page.getByRole("combobox", { name: "Filter by issuer" }).selectOption("");
     const overflow = await page.locator("#credential-section").evaluate(e => [...e.querySelectorAll("*")].filter(n => {const r=n.getBoundingClientRect();return r.width>0 && r.right>innerWidth+2;}).map(n=>n.tagName));
     assert.deepEqual(overflow, []);
     assert.equal(await page.locator("#credential-section a:not([target='_blank'])").count(), 0);
@@ -37,7 +45,7 @@ try {
   }
   console.log("PASS all 45 original certificate files serve successfully"); passed++;
   await page.setViewportSize({ width: 1440, height: 1000 }); await page.emulateMedia({ colorScheme: "dark" });
-  await page.locator("#credential-section details > summary").click();
+  await page.getByRole("tab", { name: "Featured 12", exact: true }).click();
   await page.locator("#credential-section").screenshot({ path: "scripts/credentials-review.png" });
   assert.deepEqual(errors, []); console.log(`PASS ${passed} certificate browser groups; no page errors`);
 } finally { await browser.close(); await runtime.close(); }

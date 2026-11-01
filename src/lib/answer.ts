@@ -41,14 +41,19 @@ export async function generateGroundedReply(
   const system = `${ASSISTANT_SYSTEM}\n\n${answerInstructions(question)}\nReturn JSON with exactly this shape: {"paragraphs":[{"text":"Plain factual paragraph without citation markers","sources":[1,2]}]}. Each paragraph must provide the numeric IDs of the exact source sections supporting it. Put IDs ONLY in the sources array; the application renders citation markers. Do not put markdown or citation symbols in text. Never output HTML tags, even quoted; explain word-level highlighting in prose. Do not repeat installation links when expanding an earlier answer. A configured example value is not a default unless its cited source explicitly calls it a default. Preserve qualifications: optimized for English does not mean English-only. Do not invent unsupported formats or missing integrations.`;
   const schema: Record<string, unknown> = { type: "object", properties: { paragraphs: { type: "array", items: { type: "object", properties: { text: { type: "string" }, sources: { type: "array", items: { type: "integer", enum: docs.map((_, i) => i + 1) } } }, required: ["text", "sources"], additionalProperties: false } } }, required: ["paragraphs"], additionalProperties: false };
   const context = docs.map((d, i) => `[${i + 1}] ${d.provenance ? "SUPPLEMENTARY SNAPSHOT" : "APPROVED PORTFOLIO FACTS"}: ${d.title}\n${d.text}`).join("\n\n");
-  const base = `SOURCE DOCUMENTS:\n${context}\n\nQUESTION: ${question}`;
+  // A category question is an explicit scope reset. Earlier individual answers
+  // must not dominate the catalogue overview merely because they share a title.
+  const certificateTopic = docs.some(d => d.credential || d.credentialGroup);
+  const generationHistory = certificateTopic ? [] : history;
+  const multipleProjects = docs.filter(d => d.project).length > 1;
+  const base = `SOURCE DOCUMENTS:\n${context}\n\n${multipleProjects ? "RESPONSE SCOPE: Use separate short paragraphs for the different project examples, citing the exact sections used in each paragraph. Do not combine the entire inventory into one paragraph. Focus on concrete evidence that answers the question. If mentioning CertiRoute live savings, its same paragraph must include 12.12% regret and the missed 5% target.\n\n" : ""}QUESTION: ${question}`;
   let prompt = base;
   let last: { provider: string; model: string } | undefined;
   for (let attempt = 0; attempt < 2; attempt++) {
     signal?.throwIfAborted();
     if (bounded.aborted) break;
     try {
-      const draft = await generate(system, prompt, history, undefined, bounded, undefined, { schema });
+      const draft = await generate(system, prompt, generationHistory, undefined, bounded, undefined, { schema });
       last = { provider: draft.provider, model: draft.model };
       // Canonicalize only explicit numeric source IDs. Bounds and facts are
       // still checked below; no source is inferred or appended automatically.

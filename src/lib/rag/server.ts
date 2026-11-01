@@ -42,7 +42,7 @@ export function knowledgeStatus(data: Loaded) {
   const sources = data.sources.filter(s => s.status === "indexed");
   return {
     state: data.state,
-    retrieval: "BM25",
+    retrieval: "Direct routing + model query planning + BM25",
     sourceCount: sources.length,
     credentialCount: completedCredentials.length,
     repositoryCount: new Set(sources.filter(s => s.kind === "github").map(s => s.projectSlug)).size,
