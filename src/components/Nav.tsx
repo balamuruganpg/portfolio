@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion, useReducedMotion, useScroll, useSpring } from "framer-motion";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { profile } from "@/data/site";
 import ThemeToggle from "./ThemeToggle";
 import { EV, emit } from "./ui";
@@ -44,6 +44,25 @@ export default function Nav() {
     return () => { window.removeEventListener("keydown", key); window.removeEventListener("pointerdown", outside); };
   }, [menuOpen]);
 
+  const navigateFromMenu = (event: MouseEvent<HTMLAnchorElement>, id: string) => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const target = document.getElementById(id);
+    if (!target) return;
+    event.preventDefault();
+    setMenuOpen(false);
+    const hash = `#${id}`;
+    if (window.location.hash !== hash) window.history.pushState(null, "", hash);
+    // Navigate independently of the animated link's removal, including repeat taps.
+    requestAnimationFrame(() => {
+      if (!target.hasAttribute("tabindex")) {
+        target.setAttribute("tabindex", "-1");
+        target.addEventListener("blur", () => target.removeAttribute("tabindex"), { once: true });
+      }
+      target.focus({ preventScroll: true });
+      target.scrollIntoView({ behavior: reduce ? "instant" : "smooth", block: "start" });
+    });
+  };
+
   return <header ref={header} className="fixed inset-x-0 top-0 z-50 px-3 pt-3 md:px-5 md:pt-4">
     <motion.div initial={false} animate={{ maxWidth: scrolled ? 1112 : 1152 }} transition={{ type: "spring", stiffness: 180, damping: 28 }} className={`nav-shell relative mx-auto w-full overflow-hidden rounded-2xl border bg-surface/95 backdrop-blur-xl transition-colors duration-300 ${scrolled ? "border-accent/20 shadow-xl" : "border-line"}`}>
       <nav aria-label="Main navigation" className="flex min-h-16 items-center justify-between gap-3 px-3 md:px-4">
@@ -72,7 +91,7 @@ export default function Nav() {
       <motion.div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-px origin-left bg-accent" style={{scaleX:reduce?scrollYProgress:progress}} />
     </motion.div>
     <AnimatePresence>{menuOpen && <motion.div id="mobile-navigation" initial={{height:0,opacity:0}} animate={{height:"auto",opacity:1}} exit={{height:0,opacity:0}} transition={{duration:reduce?0:0.25}} className="mx-auto mt-2 max-w-6xl overflow-hidden rounded-2xl border border-line bg-surface shadow-xl xl:hidden">
-      <div className="p-4"><p className="label mb-3 text-accent">Explore the portfolio</p><div className="grid grid-cols-2 gap-1">{MENU.map(([label,id],i)=><motion.a initial={false} whileHover={reduce?undefined:{x:3}} key={id} href={`#${id}`} aria-current={active===id?"location":undefined} onClick={()=>{setMenuOpen(false);document.getElementById(id)?.focus({preventScroll:true});}} className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm ${active===id?"bg-raised text-ink":"text-muted hover:bg-raised hover:text-ink"}`}><span className="font-mono text-[10px] text-accent">0{i+1}</span>{label}</motion.a>)}</div><div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4"><span className="font-mono text-[10px] text-muted">330+ LeetCode DSA problems</span><button type="button" onClick={()=>{setMenuOpen(false);emit(EV.openAssistant);}} className="rounded-lg border border-accent/30 px-3 py-2 text-xs text-ink">Ask the portfolio assistant ↗</button></div></div>
+      <div className="p-4"><p className="label mb-3 text-accent">Explore the portfolio</p><div className="grid grid-cols-2 gap-1">{MENU.map(([label,id],i)=><motion.a initial={false} whileHover={reduce?undefined:{x:3}} key={id} href={`#${id}`} aria-current={active===id?"location":undefined} onClick={event=>navigateFromMenu(event,id)} className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm ${active===id?"bg-raised text-ink":"text-muted hover:bg-raised hover:text-ink"}`}><span aria-hidden="true" className="font-mono text-[10px] text-accent">0{i+1}</span>{label}</motion.a>)}</div><div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4"><span className="font-mono text-[10px] text-muted">330+ LeetCode DSA problems</span><button type="button" onClick={()=>{setMenuOpen(false);emit(EV.openAssistant);}} className="rounded-lg border border-accent/30 px-3 py-2 text-xs text-ink">Ask the portfolio assistant ↗</button></div></div>
     </motion.div>}</AnimatePresence>
   </header>;
 }
