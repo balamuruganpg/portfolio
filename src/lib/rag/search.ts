@@ -1,6 +1,7 @@
 import type { Doc } from "../corpus";
 import type { HistoryItem } from "../agent";
-import { asksForLimitations, isDetailRequest, isSimplificationRequest, isWorkflowRequest, retrieveConversation } from "../agent";
+import type { SessionMemory } from "../session";
+import { asksForLimitations, isDetailRequest, isLinkRequest, isSimplificationRequest, isWorkflowRequest, retrieveConversation } from "../agent";
 import { createBm25Index, isBlockedQuestion, searchBm25, type EvidenceChunk } from "./core";
 import type { QueryPlan } from "./planning";
 
@@ -44,17 +45,17 @@ function expansionSections(candidates: EvidenceChunk[], history: HistoryItem[]) 
   return selected.slice(0, 6);
 }
 
-export function retrieveEvidence(question: string, approved: Doc[], chunks: EvidenceChunk[], history: HistoryItem[], budget = 12_000, plan?: QueryPlan | null) {
+export function retrieveEvidence(question: string, approved: Doc[], chunks: EvidenceChunk[], history: HistoryItem[], budget = 12_000, plan?: QueryPlan | null, memory?: SessionMemory) {
   if (isBlockedQuestion(question)) return { docs: [], scores: [], aliasHit: false, offTopic: true };
   const expandedHistory = history.map(h => ({ ...h, citations: h.citations.flatMap(c => {
     const chunk = chunks.find(d => d.href === c.href && d.title === c.label);
     const project = chunk && approved.find(d => d.project?.slug === chunk.projectSlug);
     return project ? [c, { label: project.title, href: project.href }] : [c];
   }) }));
-  let initial = retrieveConversation(question, approved, expandedHistory);
+  let initial = retrieveConversation(question, approved, expandedHistory, memory);
   if (initial.offTopic || initial.needsClarification) return initial;
   const planned = plan?.ids.flatMap(id => approved.filter(d => d.id === id)) ?? [];
-  if (planned.length) initial = { docs: planned, scores: planned.map(() => 30), aliasHit: false, offTopic: false };
+  if (planned.length && !initial.contextual) initial = { docs: planned, scores: planned.map(() => 30), aliasHit: false, offTopic: false };
   const searchQuestion = [question, ...(plan?.queries ?? [])].join(" ");
   if (!initial.docs.length) {
     // Technical terms newly learned from documentation need not appear in the
@@ -68,7 +69,10 @@ export function retrieveEvidence(question: string, approved: Doc[], chunks: Evid
   }
   const slugs = new Set(initial.docs.flatMap(d => d.project ? [d.project.slug] : []));
   // Generic profile questions do not acquire unrelated README claims.
-  const candidates = chunks.filter(c => (slugs.size ? slugs.has(c.projectSlug ?? "") : !c.projectSlug && /resume|education|experience|skills|linkedin|profile/i.test(searchQuestion)) && (asksForLimitations(question) || !/limitations?|drawbacks?|weakness|shortcomings|caveats?/i.test(c.heading)));
+  // Canonical records already contain approved destinations. A URL-only request
+  // needs those records, not unrelated README passages competing for tokens.
+  const linksOnly = isLinkRequest(question) && !isDetailRequest(question) && !isWorkflowRequest(question) && !asksForLimitations(question);
+  const candidates = linksOnly ? [] : chunks.filter(c => (slugs.size ? slugs.has(c.projectSlug ?? "") : !c.projectSlug && /resume|education|experience|skills|linkedin|profile/i.test(searchQuestion)) && (asksForLimitations(question) || !/limitations?|drawbacks?|weakness|shortcomings|caveats?/i.test(c.heading)));
   let focus = searchQuestion.toLowerCase();
   for (const doc of initial.docs) {
     if (!doc.project) continue;

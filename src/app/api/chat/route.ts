@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { buildSiteDocs } from "@/lib/corpus";
 import { generateGroundedReply } from "@/lib/answer";
-import { followUpSuggestions, sanitizeHistory } from "@/lib/agent";
+import { followUpSuggestions, isLinkRequest, memoryFor, sanitizeHistory, sanitizeMemory } from "@/lib/agent";
 import { assistantInformation, providerStatus } from "@/lib/providers";
 import { citationsFor } from "@/lib/retrieve";
 import { evidenceDocs, retrieveEvidence } from "@/lib/rag/search";
@@ -50,18 +50,19 @@ export async function POST(req: Request) {
   const evidence = await loadRagEvidence();
   const corpus = [...approved, ...evidenceDocs(evidence.chunks, approved)];
   const history = sanitizeHistory(body.history, corpus);
+  const memory = sanitizeMemory(body.memory, approved);
   if (/linkedin/i.test(question) && !evidence.sources.some(s => s.kind === "linkedin" && s.status === "indexed")) {
     const contact = approved.find(d => d.id === "contact")!;
-    return NextResponse.json({ answer: "Balamurugan’s LinkedIn profile is https://www.linkedin.com/in/balamuruganpg. Its profile content is not indexed because LinkedIn blocked public access. I can answer from his approved portfolio and resume instead. [1]", citations: [{ ...citationsFor([contact])[0], index: 1 }], mode: "source-unavailable", suggestions: ["What are his skills?", "What are his achievements?"] }, { headers });
+    return NextResponse.json({ answer: "Balamurugan’s LinkedIn profile is https://www.linkedin.com/in/balamuruganpg. Its profile content is not indexed because LinkedIn blocked public access. I can answer from his approved portfolio and resume instead. [1]", citations: [{ ...citationsFor([contact])[0], index: 1 }], memory: memoryFor([contact]), mode: "source-unavailable", suggestions: ["What are his skills?", "What are his achievements?"] }, { headers });
   }
   if (/^(hi|hello|hey|good (morning|evening|afternoon))[!.\s]*$/i.test(question)) return NextResponse.json({ answer: "Hi! I can help you explore Balamurugan's projects, verified results and experience. What would you like to know?", citations: [], mode: "greeting", suggestions: ["What is VeraScan?", "What are his achievements?", "Is he open to roles?"] }, { headers });
-  let result = retrieveEvidence(question, approved, evidence.chunks, history);
-  if (result.needsClarification) return NextResponse.json({ answer: "Which project or topic would you like me to explain more simply?", citations: [], mode: "clarification", suggestions: ["Explain VeraScan simply", "How does Bull/Bear Autopilot work?", "Tell me about his experience"] }, { headers });
+  let result = retrieveEvidence(question, approved, evidence.chunks, history, 12_000, undefined, memory);
+  if (result.needsClarification) return NextResponse.json({ answer: isLinkRequest(question) ? "Which project or topic would you like links for?" : "Which project or topic would you like me to explain more simply?", citations: [], mode: "clarification", suggestions: ["Which projects are live?", "What is VeraScan?", "How can I contact him?"] }, { headers });
   let strategy = result.aliasHit ? "direct" : "lexical";
   if (shouldPlanQuestion(question, result)) {
     const plan = await planQuestion(question, approved, history, req.signal);
     if (plan) {
-      result = retrieveEvidence(question, approved, evidence.chunks, history, 12_000, plan);
+      result = retrieveEvidence(question, approved, evidence.chunks, history, 12_000, plan, memory);
       strategy = "semantic";
     }
   }
@@ -77,7 +78,7 @@ export async function POST(req: Request) {
     const result = await generateGroundedReply(question, docs, history, req.signal);
     const used = result.mode === "llm" ? result.cited.map(index => ({ ...citationsFor([docs[index - 1]])[0], index })) : citations;
     const note = result.mode === "guarded" ? "The generated draft did not pass answer checks and was withheld." : result.mode === "offline" ? "The model did not return an answer. Retrieved sources remain available below." : undefined;
-    return NextResponse.json({ answer: result.text, citations: used, mode: result.mode, provider: result.provider, model: result.model, generationMs: result.generationMs, retrieval: { strategy, sourceCount: docs.length }, actions, note, suggestions }, { headers });
+    return NextResponse.json({ answer: result.text, citations: used, mode: result.mode, provider: result.provider, model: result.model, generationMs: result.generationMs, retrieval: { strategy, sourceCount: docs.length }, memory: memoryFor(docs), actions, note, suggestions }, { headers });
   } catch {
     if (req.signal.aborted) return new Response(null, { status: 499 });
     return NextResponse.json({ error: "The answer timed out. Please try again." }, { status: 503, headers });

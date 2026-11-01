@@ -21,6 +21,17 @@ try {
   const { retrieveEvidence } = await import(pathToFileURL(path.join(folder,"search.mjs")));
   const { validateGroundedAnswer, sanitizeHistory } = await import(pathToFileURL(path.join(folder,"agent.mjs")));
   const approved = buildSiteDocs();
+  await check("validated session scope preserves every live app even if a semantic plan suggests another project",()=>{
+    const live=approved.filter(d=>d.project?.live);
+    const memory={version:1,sourceIds:live.map(d=>d.id)};
+    const r=retrieveEvidence("Give me direct links",approved,[],[],12000,{ids:["project:luxury-car-dealership"],queries:[],intent:"list"},memory);
+    assert.deepEqual(r.docs.map(d=>d.id),memory.sourceIds);
+    assert.equal(r.aliasHit,true);
+  });
+  await check("credential date plans still refine an alias-matched issuer query",()=>{
+    const r=retrieveEvidence("Show Oracle certificates issued in 2025",approved,[],[],12000,{ids:["credential:oci-data-science-2025"],queries:[],intent:"list"});
+    assert.deepEqual(r.docs.map(d=>d.id),["credential:oci-data-science-2025"]);
+  });
   const source = {id:"github:verascan:README.md",kind:"github",title:"VeraScan · README",url:"https://github.com/balamuruganpg/verascan/blob/abcdef/README.md",projectSlug:"verascan",revision:"abcdef",sha256:"fixture",fetchedAt:"2026-11-01",status:"indexed"};
   const text = "# VeraScan\n## Leak-free splitting\nIteratively purifies evaluation splits until exact, fuzzy and semantic overlap with training is zero.\n\n## Installation\nInstall the package using pip install verascan.\n\n## Reports\nHTML reports include word-level diffs for inspecting contaminated samples.\n\n## Detection engines\nExact matches use normalized content hashes. Semantic matching uses sentence embeddings and nearest-neighbor candidate retrieval.\n\n## CLI usage\nThe command line audits dataset files and can fail a CI job when the configured contamination threshold is exceeded.\n\n## Limitations\nSimilarity matches need human review. A lack of detected overlap does not prove that all possible leakage has been eliminated.\n\n## Input formats\nThe package accepts string lists, dataset file paths and data frames, normalizing them into text before matching.\n\n## Match records\nEach record identifies the evaluation and training examples, matching method and similarity score for inspection.";
   const built = buildEvidenceChunks(source,text,approved);

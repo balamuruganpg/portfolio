@@ -1,10 +1,25 @@
 import type { Doc } from "./corpus";
 import { namedProjects, retrieve, unsupportedClaims, unsupportedNumbers } from "./retrieve";
+import type { SessionMemory } from "./session";
 
 export interface HistoryItem {
   role: "user" | "assistant";
   text: string;
   citations: { label: string; href: string }[];
+}
+
+export function sanitizeMemory(value: unknown, corpus: Doc[]): SessionMemory {
+  const memory = value as Partial<SessionMemory> | null;
+  const allowed = new Set(corpus.filter(d => !d.provenance).map(d => d.id));
+  return { version: 1, sourceIds: memory?.version === 1 && Array.isArray(memory.sourceIds) ? [...new Set(memory.sourceIds.filter((id): id is string => typeof id === "string" && allowed.has(id)))].slice(0, 8) : [] };
+}
+
+export function memoryFor(docs: Doc[]): SessionMemory {
+  return { version: 1, sourceIds: [...new Set(docs.filter(d => !d.provenance).map(d => d.id))].slice(0, 8) };
+}
+
+export function isLinkRequest(question: string): boolean {
+  return /\b(links?|urls?)\b|\bwhere (?:can|do) (?:I|we) (?:try|open|use|access)\b/i.test(question);
 }
 
 export function isDetailRequest(question: string): boolean {
@@ -32,6 +47,7 @@ export function followUpSuggestions(question: string, docs: Doc[]): string[] {
 }
 
 export function answerInstructions(question: string): string {
+  if (isLinkRequest(question)) return "Provide the actual documented destination URLs for EVERY subject in the current retrieved scope, one short paragraph per project with its name, exact URL and source marker. For direct/try/live links prefer each project's Live app URL; if no live app is documented, label its repository or package URL accurately. If explicitly asked for GitHub/source/package links, provide that requested kind instead. Preserve the complete active project list, never substitute another project or omit a subject. Use plain URLs, not markdown links. Do not add limitations or repeat the overview.";
   if (isSimplificationRequest(question)) return "The user needs a simpler explanation of the current subject. Use everyday words in about 60–100 words and two short paragraphs. Begin with a clearly labelled familiar analogy, then describe the basic input-to-output workflow. Do not list algorithms, library names, numeric parameters or technical similarity terms unless the user specifically asks about one. For example, say copied text, shared phrases, small wording changes and similar meaning instead of fuzzy/semantic matching or hash/vector jargon. Use no invented numbers or project achievements. Explain freshly from the sources; do not repeat the previous jargon or say the explanation is undocumented when the sources describe it. Use source markers for the factual explanation.";
   if (isWorkflowRequest(question)) return "Explain the documented workflow in 3–5 clear steps, about 100–170 words. Cover inputs, what the system does, and useful outputs. Define technical terms briefly. Go beyond repeating the overview or listing algorithm names. Use at least two supplementary source sections when available, with exact source markers. Discuss limitations only if explicitly asked; preserve any essential qualification when quoting benchmark results.";
   if (!isDetailRequest(question)) return "Answer this question directly. Use a concise explanation unless the user asks for a walkthrough.";
@@ -47,15 +63,17 @@ export function sanitizeHistory(value: unknown, corpus: Doc[]): HistoryItem[] {
   });
 }
 
-export function retrieveConversation(question: string, corpus: Doc[], history: HistoryItem[]) {
+export function retrieveConversation(question: string, corpus: Doc[], history: HistoryItem[], memory?: SessionMemory) {
   const direct = retrieve(question, corpus);
   if (direct.offTopic || direct.aliasHit) return direct;
-  if (!history.length) return isSimplificationRequest(question) && !direct.docs.length ? { ...direct, needsClarification: true } : direct;
+  const linkFollowUp = isLinkRequest(question) && !/\b(contact|social|portfolio|email|linkedin|resume|phone|cv|profile|leetcode|certs?|certifications?|certificates?|credentials?|education|internships?|experience|skills?|streamlit|dashboards?)\b|\b(?:his|your|balamurugan(?:['’]s)?)\s+github\b|\b(?:all|live|deployed)\s+(?:projects?|apps?)\b|\bprojects?\b.*\b(?:live|deployed)\b/i.test(question);
+  const remembered = sanitizeMemory(memory, corpus).sourceIds.flatMap(id => corpus.filter(d => d.id === id));
+  if (!history.length && !remembered.length) return linkFollowUp || (isSimplificationRequest(question) && !direct.docs.length) ? { docs: [], scores: [], aliasHit: false, offTopic: false, needsClarification: true } : direct;
   const last = [...history].reverse().find(h => h.role === "assistant" && h.citations.length);
-  let referenced = corpus.filter(d => last?.citations.some(c => c.href === d.href && c.label === (d.project?.name ?? d.title)));
+  let referenced = remembered.length ? remembered : corpus.filter(d => last?.citations.some(c => c.href === d.href && c.label === (d.project?.name ?? d.title)));
   // Topic identity comes from what the visitor asked about. Recover from an
   // older wrong assistant citation without treating visitor text as evidence.
-  if (isSimplificationRequest(question) && referenced.some(d => d.project)) {
+  if (!remembered.length && isSimplificationRequest(question) && referenced.some(d => d.project)) {
     for (const previous of [...history].reverse().filter(h => h.role === "user")) {
       const explicit = namedProjects(previous.text, corpus);
       if (explicit.length) { referenced = explicit; break; }
@@ -67,14 +85,15 @@ export function retrieveConversation(question: string, corpus: Doc[], history: H
     if (contextual.docs.some(d => d.credentialGroup || d.credential)) return contextual;
   }
   // Use verified citation destinations, never client-provided free-form labels.
-  const followUp = isSimplificationRequest(question) || /\b(it|its|this|that|they|them|these|those|the project|the app|the package|the model|more|details?|deeper|elaborate|expand|continue|go on|explain further)\b/i.test(question);
+  const followUp = linkFollowUp || isSimplificationRequest(question) || /\b(it|its|this|that|they|them|their|these|those|each|both|ones?|the project|the app|the package|the model|more|details?|deeper|elaborate|expand|continue|go on|explain further)\b/i.test(question);
   if (!followUp) return direct;
-  if (!referenced.length) return isSimplificationRequest(question) ? { docs: [], scores: [], aliasHit: false, offTopic: false, needsClarification: true } : direct;
+  if (!referenced.length) return linkFollowUp || isSimplificationRequest(question) ? { docs: [], scores: [], aliasHit: false, offTopic: false, needsClarification: true } : direct;
+  if (linkFollowUp) return { docs: referenced, scores: referenced.map(() => 30), aliasHit: true, offTopic: false, contextual: true };
   // For general hiring/contact/education questions, an explicit section intent
   // must win over the previous project, even if the sentence contains "his".
   const specificSection = direct.docs.some(d => ["contact", "education", "experience", "achievements", "certs", "profile"].includes(d.section));
   if (specificSection && !/\b(it|its|the project|the app|the package|the model)\b/i.test(question)) return direct;
-  return { docs: referenced, scores: referenced.map(() => 30), aliasHit: true, offTopic: false };
+  return { docs: referenced, scores: referenced.map(() => 30), aliasHit: true, offTopic: false, contextual: true };
 }
 
 /** Validate facts against the source(s) cited in each paragraph, not the whole corpus. */
@@ -101,6 +120,17 @@ export function validateGroundedAnswer(answer: string, docs: Doc[], question = "
     })) return { valid: false, cited: [], reason: "Answer the requested certificate catalogue or issuer overview, including each selected group's documented completed count. Do not repeat only the previous individual certificate." };
   }
   if (cited.some(n => n < 1 || n > docs.length)) return { valid: false, cited: [], reason: `A citation refers to a nonexistent source. Use only source IDs 1 through ${docs.length}.` };
+  if (isLinkRequest(question)) {
+    const sourceLinks = /\b(github|source|repositories|repository|repos?)\b/i.test(question);
+    const packageLinks = /\b(pypi|package)\b/i.test(question);
+    const missing = docs.flatMap((doc, i) => {
+      const project = doc.project;
+      if (!project) return [];
+      const url = sourceLinks ? project.repo : packageLinks ? project.pypi ?? project.repo : project.live ?? project.pypi ?? project.repo;
+      return !answer.includes(url.replace(/\/$/, "")) || !cited.includes(i + 1) ? [`${project.name}: ${url} [${i + 1}]`] : [];
+    });
+    if (missing.length) return { valid: false, cited: [], reason: `Keep the entire active project list. Include these exact requested destinations with their approved source markers: ${missing.join("; ")}. Do not substitute another project or only give portfolio section links.` };
+  }
   const blocks = [...answer.matchAll(/([\s\S]*?)((?:\[\d+\][ \t]*)+)(?=\s|$)/g)].map(m => m[0]);
   if (blocks.join("").replace(/\s/g, "") !== answer.replace(/\s/g, "")) return { valid: false, cited: [], reason: "Some text has no trailing citation. Every paragraph's final sentence must end with a valid [N] marker." };
   for (const block of blocks) {

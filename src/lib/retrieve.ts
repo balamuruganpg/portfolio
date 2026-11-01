@@ -51,6 +51,7 @@ export interface Retrieval {
   aliasHit: boolean;
   offTopic: boolean;
   needsClarification?: boolean;
+  contextual?: boolean;
 }
 
 export const MIN_SCORE = 4;

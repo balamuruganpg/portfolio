@@ -5,19 +5,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { STARTER_QUESTIONS } from "@/data/site";
 import { EV, emit } from "./ui";
 import AssistantMark from "./AssistantMark";
+import { SESSION_KEY, readSession, requestHistory, serializeSession, type Citation, type SessionMemory, type SessionMessage as Msg } from "@/lib/session";
 
-interface Citation { label: string; href: string; section: string; index?: number }
-interface Msg {
-  role: "user" | "assistant";
-  text: string;
-  citations?: Citation[];
-  mode?: "llm" | "offline" | "guarded" | "refused" | "error" | "greeting" | "cancelled" | "source-unavailable" | "assistant-info" | "clarification";
-  note?: string;
-  suggestions?: string[];
-  provider?: string;
-  model?: string;
-  actions?: { type: "credentials"; label: string; query: string }[];
-}
 const modes: Record<string, string> = { llm: "RAG answer · source-checked", offline: "Model unavailable · sources found", guarded: "Draft withheld · retry available", refused: "Outside portfolio scope", greeting: "Ready to explore", cancelled: "Stopped", "source-unavailable": "Source unavailable · verified profile link", "assistant-info": "Assistant information", clarification: "Choose a subject", error: "Request interrupted" };
 
 function promptLabel(question: string): string {
@@ -32,6 +21,8 @@ export default function Assistant() {
   const reduce = useReducedMotion();
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
+  const [memory, setMemory] = useState<SessionMemory>({ version: 1, sourceIds: [] });
+  const [sessionReady, setSessionReady] = useState(false);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [provider, setProvider] = useState<string | null>(null);
@@ -44,31 +35,50 @@ export default function Assistant() {
   const launcherRef = useRef<HTMLButtonElement>(null);
   const controller = useRef<AbortController | null>(null);
   const msgsRef = useRef(msgs);
+  const memoryRef = useRef(memory);
   const busyRef = useRef(false);
   msgsRef.current = msgs;
+  memoryRef.current = memory;
 
   useEffect(() => {
     // Retire the old browser key flow; credentials belong only on the server.
     try { localStorage.removeItem("portfolio_gemini_key"); } catch {}
+    try {
+      const saved = readSession(sessionStorage.getItem(SESSION_KEY));
+      if (saved) { msgsRef.current = saved.messages; memoryRef.current = saved.memory; setMsgs(saved.messages); setMemory(saved.memory); }
+    } catch {}
+    setSessionReady(true);
     fetch("/api/chat").then(r => r.json()).then(d => {setProvider(d.hasKey ? d.provider : null);if(d.knowledge)setKnowledge(d.knowledge);}).catch(() => {});
     return () => controller.current?.abort();
   }, []);
+
+  useEffect(() => {
+    if (!sessionReady) return;
+    try {
+      if (!msgs.length) sessionStorage.removeItem(SESSION_KEY);
+      else sessionStorage.setItem(SESSION_KEY, serializeSession(msgs, memory));
+    } catch {} // Storage restrictions must not prevent chatting.
+  }, [msgs, memory, sessionReady]);
 
   const ask = useCallback(async (q: string) => {
     const question = q.trim();
     if (!question || busyRef.current || question.length > 600) return;
     busyRef.current = true;
     setOpen(true); setBusy(true); setInput("");
-    const history = msgsRef.current.filter(m => m.mode !== "error" && m.mode !== "cancelled").slice(-6).map(m => ({ role: m.role, text: m.text, citations: m.citations }));
+    const history = requestHistory(msgsRef.current);
     setMsgs(m => [...m, { role: "user", text: question }]);
     const abort = new AbortController(); controller.current = abort;
     const timer = setTimeout(() => abort.abort("timeout"), 20_000);
     try {
-      const response = await fetch("/api/chat", { method: "POST", signal: abort.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question, history }) });
+      const response = await fetch("/api/chat", { method: "POST", signal: abort.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question, history, memory: memoryRef.current }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "I couldn't complete that request. Please try again.");
       if (typeof data.answer !== "string") throw new Error("The response was incomplete. Please try again.");
       const actions = Array.isArray(data.actions) ? data.actions.filter((a: { type?: string; label?: unknown; query?: unknown }) => a.type === "credentials" && typeof a.label === "string" && typeof a.query === "string").slice(0, 2) : [];
+      if (data.memory?.version === 1 && Array.isArray(data.memory.sourceIds)) {
+        const next: SessionMemory = { version: 1, sourceIds: data.memory.sourceIds.filter((id: unknown): id is string => typeof id === "string" && id.length <= 160).slice(0, 8) };
+        memoryRef.current = next; setMemory(next);
+      }
       setMsgs(m => [...m, { role: "assistant", text: data.answer, citations: data.citations, mode: data.mode, note: data.note, suggestions: data.suggestions, provider: data.provider, model: data.model, actions }]);
     } catch (error) {
       const stopped = abort.signal.aborted && abort.signal.reason !== "timeout";
@@ -107,7 +117,11 @@ export default function Assistant() {
     if (c.href === "#certs") { event.preventDefault(); setOpen(false); emit(EV.focusCredentials, { view: "all" }); }
   };
   const opensProofTab = (href: string) => href.startsWith("https:") || href.startsWith("/credentials/");
-  const answerBody = (message: Msg) => message.text.split(/(\[\d+\])/g).map((part, i) => {
+  const answerBody = (message: Msg) => message.text.split(/(\[\d+\]|https:\/\/[^\s<>]+)/g).map((part, i) => {
+    if (part.startsWith("https://")) {
+      const url = part.replace(/[.,;!?)]+$/, "");
+      return <span key={i}><a href={url} target="_blank" rel="noopener noreferrer" className="break-all text-accent underline underline-offset-4 hover:text-ink">{url}</a>{part.slice(url.length)}</span>;
+    }
     const number = part.match(/^\[(\d+)\]$/)?.[1];
     const citation = number && message.citations?.find(c => c.index === Number(number));
     return citation ? <a key={i} href={citation.href} target={opensProofTab(citation.href) ? "_blank" : undefined} rel={opensProofTab(citation.href) ? "noopener noreferrer" : undefined} onClick={e => cite(citation, e)} aria-label={`Source ${number}: ${citation.label}`} className="mx-0.5 inline-flex rounded border border-accent/30 px-1 font-mono text-xs text-accent hover:bg-accent/10">{number}</a> : part;
@@ -125,9 +139,9 @@ export default function Assistant() {
         <header className="border-b border-line bg-raised/50 px-5 py-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3"><span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 text-accent"><AssistantMark className="h-7 w-7" /></span><div><h2 className="text-sm font-semibold">Portfolio Assistant</h2><p className="mt-0.5 font-mono text-[10px] text-muted">{provider ? `${provider} + portfolio RAG` : "Sources ready · model not configured"}</p></div></div>
-            <div className="flex items-center gap-1"><button type="button" disabled={busy || !msgs.length} onClick={() => {setMsgs([]);setInput("");inputRef.current?.focus();}} aria-label="Clear conversation" title="New conversation" className="rounded-lg p-2 text-muted hover:bg-raised disabled:opacity-30">↺</button><button type="button" onClick={() => setOpen(false)} aria-label="Close assistant" className="rounded-lg p-2 text-muted hover:bg-raised">✕</button></div>
+            <div className="flex items-center gap-1"><button type="button" disabled={busy || !msgs.length} onClick={() => {msgsRef.current=[];memoryRef.current={version:1,sourceIds:[]};setMsgs([]);setMemory(memoryRef.current);setInput("");try{sessionStorage.removeItem(SESSION_KEY);}catch{}inputRef.current?.focus();}} aria-label="Clear conversation" title="New conversation" className="rounded-lg p-2 text-muted hover:bg-raised disabled:opacity-30">↺</button><button type="button" onClick={() => setOpen(false)} aria-label="Close assistant" className="rounded-lg p-2 text-muted hover:bg-raised">✕</button></div>
           </div>
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2"><p className="text-xs text-muted">Grounded on this site, not the open web.</p>{knowledge && <button type="button" onClick={()=>setShowSources(v=>!v)} aria-expanded={showSources} aria-controls="assistant-source-coverage" className="rounded px-2 py-1 font-mono text-[10px] text-accent hover:bg-raised">{knowledge.sourceCount} indexed sources {showSources?"−":"+"}</button>}</div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2"><p className="text-xs text-muted">Grounded in portfolio evidence · memory for this tab.</p>{knowledge && <button type="button" onClick={()=>setShowSources(v=>!v)} aria-expanded={showSources} aria-controls="assistant-source-coverage" className="rounded px-2 py-1 font-mono text-[10px] text-accent hover:bg-raised">{knowledge.sourceCount} indexed sources {showSources?"−":"+"}</button>}</div>
           {showSources && knowledge && <div id="assistant-source-coverage" className="mt-3 rounded-xl border border-line bg-bg/50 p-3 text-xs leading-relaxed text-muted"><p>{knowledge.repositoryCount} repositories · {knowledge.chunkCount} indexed passages</p>{knowledge.credentialCount && <p className="mt-1">{knowledge.credentialCount} document-backed completed credentials in the approved portfolio facts.</p>}<p className="mt-1">Approved facts + versioned GitHub docs, resume and package documentation. Sources are refreshed by the owner; answers do not browse the web.</p>{knowledge.updatedAt&&<p className="mt-2 font-mono text-[10px]">Snapshot: {new Date(knowledge.updatedAt).toLocaleDateString("en-IN",{timeZone:"Asia/Kolkata"})}</p>}{knowledge.unavailable?.map(s=><p key={s.title} className="mt-1">{s.title}: {s.status}. No content inferred.</p>)}</div>}
 
         </header>
