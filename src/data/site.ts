@@ -344,6 +344,7 @@ export const projects: Project[] = [
     slug: "churnguard-pro",
     name: "ChurnGuard Pro",
     repo: gh("Customer-Churn-Prediction-Dashboard"),
+    live: "https://churn-guard-dash.streamlit.app/",
     categories: ["Dashboards"],
     summary: "Customer churn prediction dashboard built in Streamlit, trained with Gradient Boosting on 7,043 customers.",
     stack: ["Gradient Boosting", "Streamlit"],
@@ -353,6 +354,7 @@ export const projects: Project[] = [
     slug: "oncoinsight-pro",
     name: "OncoInsight Pro",
     repo: gh("OncoInsight-Pro-Cancer-Analytics"),
+    live: "https://oncoinsight-pro-cancer-analytics.streamlit.app/",
     categories: ["Dashboards"],
     summary:
       "Cancer analytics dashboard in Streamlit over 17,686 records, with statistical analysis plus Gradient Boosting regression and classification (GBR/GBC).",

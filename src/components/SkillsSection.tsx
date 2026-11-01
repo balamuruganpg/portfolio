@@ -15,6 +15,8 @@ interface SkillReceipt {
   metric?: string;
 }
 
+const STREAMLIT_PROJECTS = projects.filter(project => project.stack.includes("Streamlit"));
+
 const SKILL_RECEIPTS: SkillReceipt[] = [
   // ML & Deep Learning
   {
@@ -178,10 +180,10 @@ const SKILL_RECEIPTS: SkillReceipt[] = [
   {
     name: "Streamlit",
     category: "Engineering",
-    description: "Rapid ML dashboard engineering for clinical analysis, churn prediction and interactive model inference.",
-    projectSlugs: ["pneumoscan", "churnguard-pro", "oncoinsight-pro"],
-    tag: "ML Dashboards",
-    metric: "3 Deployed Apps",
+    description: "Rapid dashboard engineering for clinical analysis, churn prediction, interactive model inference and cloud SLA monitoring.",
+    projectSlugs: STREAMLIT_PROJECTS.map(project => project.slug),
+    tag: "ML & SLA Apps",
+    metric: `${STREAMLIT_PROJECTS.filter(project => project.live).length} Deployed Apps`,
   },
   {
     name: "Supabase",

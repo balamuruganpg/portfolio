@@ -53,7 +53,7 @@ try {
     await check("small unsupported numbers are rejected", () => assert.deepEqual(unsupportedNumbers("It has 3 checks.", "It has 4 checks."), ["3"]));
     await check("Unicode spaced percentages are normalized", () => assert.deepEqual(unsupportedNumbers("Savings were 32.77\u202f%.", "Savings 32.77%."), []));
     await check("explicit project stays specific", () => assert.deepEqual(retrieve("What is VeraScan?", docs).docs.map(d => d.id), ["project:verascan"]));
-    await check("live app list includes Signal and excludes prototypes and packages", () => assert.deepEqual(retrieve("Which projects are live?", docs).docs.map(d => d.project?.slug), ["lungscan-ai", "pneumoscan", "signal"]));
+    await check("live app list includes all five deployed projects and excludes prototypes and packages", () => assert.deepEqual(retrieve("Which projects are live?", docs).docs.map(d => d.project?.slug), ["lungscan-ai", "pneumoscan", "churnguard-pro", "oncoinsight-pro", "signal"]));
     await check("the mini project's live answer stays scoped to Signal and its verified URL", () => {
       const selected = retrieve("Is the mini project live?", docs).docs;
       assert.deepEqual(selected.map(d => d.id), ["project:signal"]);

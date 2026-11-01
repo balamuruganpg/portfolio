@@ -71,6 +71,15 @@ for (const [f, n] of Object.entries(expected)) {
 }
 await page.click('[data-filter="All"]');
 
+// The Streamlit receipt covers four apps; LungScan is the fifth live app overall.
+await page.getByRole("button", { name: "Streamlit", exact: true }).click();
+const streamlitHeading = page.getByRole("heading", { name: "Streamlit", exact: true });
+await streamlitHeading.waitFor();
+const streamlitReceipt = streamlitHeading.locator("..");
+const streamlitNames = await streamlitReceipt.locator("h4").allTextContents();
+ok("Streamlit receipt lists all four framework projects", JSON.stringify(streamlitNames) === JSON.stringify(["PneumoScan", "ChurnGuard Pro", "OncoInsight Pro", "Signal"]), streamlitNames.join(", "));
+ok("Streamlit receipt shows four deployed apps", (await streamlitReceipt.innerText()).includes("4 Deployed Apps"));
+
 // --- click helper: click a link, capture the new tab, report final URL + status
 async function clickExternal(locator, label, expectHost) {
   await locator.scrollIntoViewIfNeeded();
@@ -140,7 +149,7 @@ ok("VeraScan answer does not invent a paper", !/\b(paper|arxiv|publication|journ
 ok("VeraScan answer mentions PyPI", /pypi|pip install/i.test(v.text));
 
 const live = await askAssistant("Which projects are live?");
-ok("live question cites LungScan AI + PneumoScan + Signal", live.cites.includes("LungScan AI") && live.cites.includes("PneumoScan") && live.cites.includes("Signal"), `citations: ${live.cites.join(", ")}`);
+ok("live question cites all five deployed projects", ["LungScan AI", "PneumoScan", "ChurnGuard Pro", "OncoInsight Pro", "Signal"].every(name => live.cites.includes(name)), `citations: ${live.cites.join(", ")}`);
 
 const stack = await askAssistant("What stack for LungScan?");
 ok("LungScan stack cites LungScan AI only", stack.cites[0] === "LungScan AI", `citations: ${stack.cites.join(", ")}`);

@@ -55,6 +55,18 @@
 - Live App: https://medrag.in
 - Description: Chest X-ray pathology classifier built on DenseNet121 with Grad-CAM visual heatmaps, achieving 86–88% test accuracy across 4 thoracic classes.
 
+## Live Dashboard: ChurnGuard Pro
+- Project: ChurnGuard Pro
+- Repository: https://github.com/balamuruganpg/Customer-Churn-Prediction-Dashboard
+- Live app: https://churn-guard-dash.streamlit.app/
+- Description: Customer churn prediction dashboard built in Streamlit, trained with Gradient Boosting on 7,043 customers.
+
+## Live Dashboard: OncoInsight Pro
+- Project: OncoInsight Pro
+- Repository: https://github.com/balamuruganpg/OncoInsight-Pro-Cancer-Analytics
+- Live app: https://oncoinsight-pro-cancer-analytics.streamlit.app/
+- Description: Cancer analytics dashboard in Streamlit over 17,686 records, with statistical analysis plus Gradient Boosting regression and classification (GBR/GBC).
+
 ## Skills & Core Competencies
 - ML & Deep Learning: Reinforcement Learning (PPO), CNNs (DenseNet121, MobileNetV2), RNN, ANN, Gradient Boosting, Clustering (K-Means, DBSCAN, Hierarchical), Grad-CAM explainability.
 - LLMs & Multi-Agent: Coordinated multi-agent topologies, multi-provider LLM fallback, deterministic fact-checking, retrieval-grounded systems.
